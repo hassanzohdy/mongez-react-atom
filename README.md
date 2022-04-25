@@ -384,5 +384,5 @@ const subscription = currencyAtom.destroy((atom) => {
 
 ## Change Log
 
-- V1.1 (25 Apr 2022)
+- V1.1.0 (25 Apr 2022)
     - Added [beforeUpdate](#value-mutation-before-update) function.
