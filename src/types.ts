@@ -12,6 +12,10 @@ export type AtomProps = {
    * Atom default value
    */
   default: any;
+  /**
+   * Make adjustments on the value before updating the atom 
+   */
+  beforeUpdate?: (newValue: any) => any;
 };
 
 /**

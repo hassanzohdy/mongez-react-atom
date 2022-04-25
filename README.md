@@ -29,7 +29,7 @@ This will raise the power of single responsibility.
 ```ts
 import { atom, Atom } from '@mongez/react-atom';
 
-export const currentCurrency: Atom = atom({
+export const currencyAtom: Atom = atom({
     name: 'currency',
     default: 'EUR',
 });
@@ -39,17 +39,17 @@ export const currentCurrency: Atom = atom({
 
 ### Using Atoms In Components
 
-Now the `currentCurrency` is now an atom, has only single value, from this point we can use it in anywhere in our application components or event outside components.
+Now the `currencyAtom` is now an atom, has only single value, from this point we can use it in anywhere in our application components or event outside components.
 
 `Header.tsx`
 
 ```tsx
 import React from 'react';
 import { useAtom } from '@mongez/react-atom';
-import { currentCurrency } from '~/src/atoms';
+import { currencyAtom } from '~/src/atoms';
 
 export default function Header() {
-    const [currency, setCurrency] = useAtom(currentCurrency);
+    const [currency, setCurrency] = useAtom(currencyAtom);
 
     return (
         <>
@@ -65,10 +65,10 @@ export default function Header() {
 ```tsx
 import React from 'react';
 import { useAtom } from '@mongez/react-atom';
-import { currentCurrency } from '~/src/atoms';
+import { currencyAtom } from '~/src/atoms';
 
 export default function Footer() {
-    const [currency] = useAtom(currentCurrency);
+    const [currency] = useAtom(currencyAtom);
 
     return (
         <>
@@ -90,10 +90,10 @@ Now let's add some buttons to change the current currency from the header.
 ```tsx
 import React from 'react';
 import { useAtom } from '@mongez/react-atom';
-import { currentCurrency } from '~/src/atoms';
+import { currencyAtom } from '~/src/atoms';
 
 export default function Header() {
-    const [currency, setCurrency] = useAtom(currentCurrency);
+    const [currency, setCurrency] = useAtom(currencyAtom);
 
     return (
         <>
@@ -118,7 +118,7 @@ A shorthand way if we want only the atom value instead of the atom and the state
 ```tsx
 import React from 'react';
 import { useAtomValue } from '@mongez/react-atom';
-import { currentCurrency } from '~/src/atoms';
+import { currencyAtom } from '~/src/atoms';
 
 export default function Footer() {
     const currency = useAtomValue(useAtomValue);
@@ -141,10 +141,10 @@ This can be also done with the atom value updater by using `useAtomState`
 ```tsx
 import React from 'react';
 import { useAtomState } from '@mongez/react-atom';
-import { currentCurrency } from '~/src/atoms';
+import { currencyAtom } from '~/src/atoms';
 
 export default function Header() {
-    const setCurrency = useAtomState(currentCurrency);
+    const setCurrency = useAtomState(currencyAtom);
 
     return (
         <>
@@ -229,27 +229,27 @@ Atoms can be accessed outside components from its instances directly.
 
 ```ts
 // anywhere in your app
-import { currentCurrency } from '~/src/atoms';
+import { currencyAtom } from '~/src/atoms';
 
-console.log(currentCurrency.value); // get current value
+console.log(currencyAtom.value); // get current value
 ```
 
 ### Get default value
 
 ```ts
 // anywhere in your app
-import { currentCurrency } from '~/src/atoms';
+import { currencyAtom } from '~/src/atoms';
 
-console.log(currentCurrency.defaultValue); 
+console.log(currencyAtom.defaultValue); 
 ```
 
 ### Updating value
 
 ```ts
 // anywhere in your app
-import { currentCurrency } from '~/src/atoms';
+import { currencyAtom } from '~/src/atoms';
 
-currentCurrency.update('USD'); // any component using the atom will be rerendered automatically.
+currencyAtom.update('USD'); // any component using the atom will be rerendered automatically.
 ```
 
 ### Reset value
@@ -258,9 +258,9 @@ This feature might be useful in some scenarios when we need to reset the atom's 
 
 ```ts
 // anywhere in your app
-import { currentCurrency } from '~/src/atoms';
+import { currencyAtom } from '~/src/atoms';
 
-currentCurrency.reset(); // any component using the atom will be rerendered automatically.
+currencyAtom.reset(); // any component using the atom will be rerendered automatically.
 ```
 
 ### Destroy atom
@@ -269,9 +269,9 @@ We can also destroy the atom using `destroy()` method from the atom, this will s
 
 ```ts
 // anywhere in your app
-import { currentCurrency } from '~/src/atoms';
+import { currencyAtom } from '~/src/atoms';
 
-currentCurrency.reset(); 
+currencyAtom.reset(); 
 ```
 
 ### Getting atom name
@@ -280,9 +280,9 @@ To get the atom name, use `atom.name` will return the atom name.
 
 ```ts
 // anywhere in your app
-import { currentCurrency } from '~/src/atoms';
+import { currencyAtom } from '~/src/atoms';
 
-console.log(currentCurrency.name); // currentCurrency
+console.log(currencyAtom.name); // currencyAtom
 ```
 
 ### Getting atom by name
@@ -293,7 +293,7 @@ If we want more dynamic way to get atoms, we can use `getAtom` utility to get th
 // anywhere in your app
 import { getAtom } from '~/src/atoms';
 
-const currentCurrencyAtom = getAtom('currentCurrency');
+const currencyAtomAtom = getAtom('currencyAtom');
 ```
 
 If there is no atom with that name, it will return a `null` value instead.
@@ -306,7 +306,7 @@ Another way to get an atom value directly using the atom name itself is by using
 // anywhere in your app
 import { getAtomValue } from '~/src/atoms';
 
-console.log(getAtomValue('currentCurrency')); // EUR
+console.log(getAtomValue('currencyAtom')); // EUR
 ```
 
 ### Getting all atoms
@@ -317,7 +317,7 @@ To list all registered atoms, use `atomsList` utility for that purpose.
 // anywhere in your app
 import { atomsList } from '~/src/atoms';
 
-console.log(atomsList()); // [currentCurrency, ...]
+console.log(atomsList()); // [currencyAtom, ...]
 ```
 
 ### Listen to atom value changes
@@ -326,9 +326,9 @@ This is what happens with `useAtom` hook, it listens to the atom's value change 
 
 ```ts
 // anywhere in your app
-import { currentCurrency } from '~/src/atoms';
+import { currencyAtom } from '~/src/atoms';
 
-currentCurrency.onChange((newValue, oldValue, atom) => {
+currencyAtom.onChange((newValue, oldValue, atom) => {
     //
 });
 ```
@@ -337,15 +337,36 @@ currentCurrency.onChange((newValue, oldValue, atom) => {
 
 ```ts
 // anywhere in your app
-import { currentCurrency } from '~/src/atoms';
+import { currencyAtom } from '~/src/atoms';
 
-const subscription = currentCurrency.onChange((newValue, oldValue, atom) => {
-    //
+// in your component...
+const [currency, setCurrency] = useState(currencyAtom.value);
+useEffect(() => {
+    const onCurrencyChange = currencyAtom.onChange(setCurrency);    
+    return () => onCurrencyChange.unsubscribe
+}, []);
+```
+
+## Value Mutation Before Update
+
+Sometimes it's useful to mutate the value before updating it in the atom, this can be achieved via defining `beforeUpdate` method in the atom declaration.
+
+This is very useful especially when dealing with objects/arrays and you want to make some operations before using the final value.
+
+```ts
+import { atom, Atom } from '@mongez/react-atom';
+
+export const multipleAtom: Atom = atom({
+    name: 'multiple',
+    default: 0,
+    beforeUpdate(newNumber: number): number {
+        return newNumber * 2;
+    }
 });
 
-setTimeout(() => {
-    subscription.unsubscribe();
-}, 3000);
+multipleAtom.update(4); 
+
+console.log(multipleAtom.value); // 8
 ```
 
 ### Listen to atom destruction
@@ -354,9 +375,14 @@ To detect atom destruction when `destroy()` method, use `onDestroy`.
 
 ```ts
 // anywhere in your app
-import { currentCurrency } from '~/src/atoms';
+import { currencyAtom } from '~/src/atoms';
 
-const subscription = currentCurrency.destroy((atom) => {
+const subscription = currencyAtom.destroy((atom) => {
     //
 });
 ```
+
+## Change Log
+
+- V1.1 (25 Apr 2022)
+    - Added [beforeUpdate](#value-mutation-before-update) function.

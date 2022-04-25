@@ -30,8 +30,7 @@ function createAtom(data: AtomProps): Atom {
   let atomValue = data.default;
 
   if (defaultValue && typeof defaultValue === "object") {
-    defaultValue = Obj.clone(defaultValue);
-    atomValue = Obj.clone(defaultValue);
+    atomValue = defaultValue = Obj.clone(defaultValue);
   }
 
   return {
@@ -48,6 +47,10 @@ function createAtom(data: AtomProps): Atom {
       const oldValue = this.currentValue;
       if (typeof newValue === "function") {
         newValue = newValue(oldValue, this);
+      }
+
+      if (data.beforeUpdate) {
+        newValue = data.beforeUpdate(newValue);
       }
 
       this.currentValue = newValue;
