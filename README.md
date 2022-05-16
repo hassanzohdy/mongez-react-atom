@@ -500,6 +500,8 @@ userAtom.update({
 When using atom inside React Component, we can use `useAtomWatch` to listen form atom key change.
 
 ```tsx
+import { useAtomWatch } from '@mongez/react-atom';
+
 export function SomeComponent() {
     const [city, setCity] = useState(userAtom.get('address.city'));
 
@@ -523,6 +525,8 @@ The interesting thing here is the component will be re-rendered **only and only 
 Alternatively, we can use `useAtomWatcher` hook to achieve the previous behavior in one step.
 
 ```tsx
+import { useAtomWatcher } from '@mongez/react-atom';
+
 export function SomeComponent() {
     const [city, setCity] = useAtomWatcher(userAtom, 'address.city');
 
@@ -571,8 +575,14 @@ const subscription = currencyAtom.destroy((atom) => {
 });
 ```
 
+## Updating Atom Multiple times
+
+Regardless if you're using `atom.update` or `atom.change` and calling it multiple times, it will only trigger the update events only once as calling any of these methods are debounced.
+
 ## Change Log
 
+- V1.2.1 (25 Apr 2022)
+    - Disallowed triggering update/changes if called multiple times in the same time.
 - V1.2.0 (25 Apr 2022)
     - Added [atom.watch Function](#watch-for-partial-change) feature.
     - Added [Atom.get Function](#get-atom-single-key-value).

@@ -1,7 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { Atom, AtomPartialChangeCallback, AtomOptions } from "./types";
 import { Obj } from "@mongez/reinforcements";
 import events, { EventSubscription } from "@mongez/events";
+import { Atom, AtomPartialChangeCallback, AtomOptions } from "./types";
+
+let timeoutId = undefined;
+
+function debounce(callback, wait: number = 0) {
+  // Clear previous delayed action, if existent
+  if (timeoutId !== undefined) {
+    clearTimeout(timeoutId);
+    timeoutId = undefined;
+  }
+
+  // Start new delayed action for latest call
+  timeoutId = setTimeout(() => {
+    callback();
+    timeoutId = undefined; // Clear timeout
+  }, wait);
+}
 
 const atoms: Atom[] = [];
 
@@ -40,6 +56,8 @@ function createAtom(data: AtomOptions): Atom {
 
   const event = (type: string): string => `${atomEvent}.${type}`;
 
+  let changes = {};
+
   return {
     default: defaultValue,
     currentValue: atomValue,
@@ -54,51 +72,61 @@ function createAtom(data: AtomOptions): Atom {
       return this.currentValue;
     },
     change(key: string, newValue: any) {
-      let object = { ...this.value };
+      changes[key] = newValue;
+      debounce(() => {
+        let object = Obj.clone(this.currentValue);
 
-      Obj.set(object, key, newValue);
+        for (let key in changes) {
+          Obj.set(object, key, changes[key]);
+        }
 
-      this.update(object);
+        changes = {};
+
+        this.update(object);
+      });
     },
     update(newValue: any): void {
-      const oldValue = this.currentValue;
+      debounce(() => {
+        const oldValue = this.currentValue;
 
-      if (typeof newValue === "function") {
-        newValue = newValue(oldValue, this);
-      }
+        if (typeof newValue === "function") {
+          newValue = newValue(oldValue, this);
+        }
 
-      if (atomValueIsObject) {
-        if (newValue && typeof newValue === "object") {
-          let flattenOldValue = Obj.flatten(oldValue);
-          let flattenNewValue = Obj.flatten(newValue);
+        if (data.beforeUpdate) {
+          newValue = data.beforeUpdate(newValue);
+        }
 
-          for (let key in flattenOldValue) {
-            if (!flattenNewValue.hasOwnProperty(key)) {
-              events.trigger(event(`update.partial.${key}`), undefined, flattenOldValue[key], this);
-            } else if (flattenOldValue[key] !== flattenNewValue[key]) {
-              events.trigger(event(`update.partial.${key}`), flattenNewValue[key], flattenOldValue[key], this);
+        this.currentValue = newValue;
+
+        if (atomValueIsObject) {
+          if (newValue && typeof newValue === "object") {
+            let flattenOldValue = Obj.flatten(oldValue);
+            let flattenNewValue = Obj.flatten(newValue);
+
+            for (let key in flattenOldValue) {
+              if (!Object.prototype.hasOwnProperty.call(flattenNewValue, key)) {
+                events.trigger(event(`update.partial.${key}`), undefined, flattenOldValue[key], this);
+              } else if (flattenOldValue[key] !== flattenNewValue[key]) {
+                events.trigger(event(`update.partial.${key}`), flattenNewValue[key], flattenOldValue[key], this);
+              }
             }
-          }
 
-          for (let key in flattenNewValue) {
-            if (!flattenOldValue.hasOwnProperty(key)) {
-              events.trigger(event(`update.partial.${key}`), flattenNewValue[key], undefined, this);
+            for (let key in flattenNewValue) {
+              if (!Object.prototype.hasOwnProperty.call(flattenOldValue, key)) {
+                events.trigger(event(`update.partial.${key}`), flattenNewValue[key], undefined, this);
+              }
             }
           }
         }
-      }
 
-      if (data.beforeUpdate) {
-        newValue = data.beforeUpdate(newValue);
-      }
-
-      this.currentValue = newValue;
-      events.trigger(
-        event('update'),
-        this.currentValue,
-        oldValue,
-        this
-      );
+        events.trigger(
+          event('update'),
+          this.currentValue,
+          oldValue,
+          this
+        );
+      });
     },
     onChange(
       callback: (newValue: any, oldValue: any, atom: Atom) => void
@@ -106,7 +134,7 @@ function createAtom(data: AtomOptions): Atom {
       return events.subscribe(event('update'), callback);
     },
     get(key: string, defaultValue: any = null): any {
-      return Obj.get(this.value, key, defaultValue);
+      return Obj.get(this.currentValue, key, defaultValue);
     },
     destroy() {
       events.trigger(event('delete'), this);

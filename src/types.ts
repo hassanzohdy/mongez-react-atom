@@ -9,6 +9,7 @@ export type AtomOptions = {
   /**
    * Atom unique name
    */
+  // eslint-disable-next-line no-restricted-globals
   name: string;
   /**
    * Atom default value
@@ -27,6 +28,7 @@ export type Atom = {
   /**
    * Atom unique name, set by the user
    */
+  // eslint-disable-next-line no-restricted-globals
   name: string;
   /**
    * Atom default value, set by the user
