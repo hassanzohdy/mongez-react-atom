@@ -20,7 +20,7 @@ Or
 
 ## Usage
 
-### Creating New Atom
+## Creating New Atom
 
 The main idea here is every single data that might be manipulated will be stored independently in a shape of an `atom`.
 
@@ -37,7 +37,7 @@ export const currencyAtom: Atom = atom({
 
 > Please note that all atoms are immutables, the default data will be kept untouched if it is objects or arrays.
 
-### Using Atoms In Components
+## Using Atoms In Components
 
 Now the `currencyAtom` is now an atom, has only single value, from this point we can use it in anywhere in our application components or event outside components.
 
@@ -109,7 +109,7 @@ export default function Header() {
 
 Once we click on any button of the three buttons, the currency will be changed in our atom, the good thing here is it will be changed in the `Footer` component as well.
 
-### Getting Atom Values Only
+## Getting Atom Values Only
 
 A shorthand way if we want only the atom value instead of the atom and the state updater is to use `useAtomValue` hook.
 
@@ -121,7 +121,7 @@ import { useAtomValue } from '@mongez/react-atom';
 import { currencyAtom } from '~/src/atoms';
 
 export default function Footer() {
-    const currency = useAtomValue(useAtomValue);
+    const currency = useAtomValue(currencyAtom);
 
     return (
         <>
@@ -132,7 +132,7 @@ export default function Footer() {
 }
 ```
 
-### Getting Atom State Value Updater Only
+## Getting Atom State Value Updater Only
 
 This can be also done with the atom value updater by using `useAtomState`
 
@@ -157,21 +157,45 @@ export default function Header() {
 }
 ```
 
-### The Traveling Atom
+## The Traveling Atom
 
 The name point here is any atom can be updated from any component, also any component can listen to thg atom's value change by using `useAtom` or `useAtomValue`, thus you don't need to use any Context to pass the data between components.
 
 ## Atoms are unique
 
-Atoms are meant to be **unique** therefore the atom `name` can not be used in more than one atom, if other atom is being created with a previously defined atom, an error will be thrown that indicates to use another name name.
+Atoms are meant to be **unique** therefore the atom `name` can not be used in more than one atom, if other atom is being created with a previously defined atom, an error will be thrown that indicates to use another atom name.
 
-### Atom structure
+## Atom structure
 
 Each new atom returns an atom instance, here is the atom object properties that is generated from `atom()` function.
 
 ```ts
 import { EventSubscription } from "@mongez/events";
-type Atom = {
+
+export type AtomPartialChangeCallback = (newValue: any, oldValue: any, atom: Atom) => void;
+
+/**
+ * Default props
+ */
+export type AtomProps = {
+  /**
+   * Atom unique name
+   */
+  name: string;
+  /**
+   * Atom default value
+   */
+  default: any;
+  /**
+   * Make adjustments on the value before updating the atom 
+   */
+  beforeUpdate?: (newValue: any) => any;
+};
+
+/**
+ * The Atom Instance
+ */
+export type Atom = {
   /**
    * Atom unique name, set by the user
    */
@@ -218,6 +242,13 @@ type Atom = {
    * An event listener to the atom destruction
    */
   onDestroy(callback: (atom: Atom) => void): EventSubscription;
+
+  /**
+   * Watch for atom value change
+   * This can be used only when atom's default value is an object or an array
+   * The key accepts dot.notation syntax
+   */
+  watch?: (key: string, callback: AtomPartialChangeCallback) => EventSubscription;
 };
 ```
 
@@ -234,7 +265,7 @@ import { currencyAtom } from '~/src/atoms';
 console.log(currencyAtom.value); // get current value
 ```
 
-### Get default value
+## Get default value
 
 ```ts
 // anywhere in your app
@@ -243,7 +274,7 @@ import { currencyAtom } from '~/src/atoms';
 console.log(currencyAtom.defaultValue); 
 ```
 
-### Updating value
+## Updating value
 
 ```ts
 // anywhere in your app
@@ -252,7 +283,29 @@ import { currencyAtom } from '~/src/atoms';
 currencyAtom.update('USD'); // any component using the atom will be rerendered automatically.
 ```
 
-### Reset value
+## Change atom single key
+
+If you're going to change a single key in the atom's value object, we may use `atom.change` for this purpose.
+
+```ts
+
+import { atom } from '@mongez/atom-react';
+
+const userAtom = atom({
+    name: 'user',
+    default: {
+        name: 'Hasan',
+        address: {
+            city: 'New York',
+        }
+    }
+});
+
+userAtom.change('name', 'Ali');
+userAtom.change('address.city', 'Cairo');
+```
+
+## Reset value
 
 This feature might be useful in some scenarios when we need to reset the atom's value to its default value.
 
@@ -263,7 +316,7 @@ import { currencyAtom } from '~/src/atoms';
 currencyAtom.reset(); // any component using the atom will be rerendered automatically.
 ```
 
-### Destroy atom
+## Destroy atom
 
 We can also destroy the atom using `destroy()` method from the atom, this will stop re-rendering any component that using the atom using `useAtom` or `useAtomState` hooks.
 
@@ -274,7 +327,7 @@ import { currencyAtom } from '~/src/atoms';
 currencyAtom.reset(); 
 ```
 
-### Getting atom name
+## Getting atom name
 
 To get the atom name, use `atom.name` will return the atom name.
 
@@ -285,7 +338,7 @@ import { currencyAtom } from '~/src/atoms';
 console.log(currencyAtom.name); // currencyAtom
 ```
 
-### Getting atom by name
+## Getting atom by name
 
 If we want more dynamic way to get atoms, we can use `getAtom` utility to get the atom using its name.
 
@@ -298,7 +351,7 @@ const currencyAtomAtom = getAtom('currencyAtom');
 
 If there is no atom with that name, it will return a `null` value instead.
 
-### Getting atom value by name
+## Getting atom value by name
 
 Another way to get an atom value directly using the atom name itself is by using `getAtomValue` utility.
 
@@ -309,7 +362,7 @@ import { getAtomValue } from '~/src/atoms';
 console.log(getAtomValue('currencyAtom')); // EUR
 ```
 
-### Getting all atoms
+## Getting all atoms
 
 To list all registered atoms, use `atomsList` utility for that purpose.
 
@@ -320,7 +373,40 @@ import { atomsList } from '~/src/atoms';
 console.log(atomsList()); // [currencyAtom, ...]
 ```
 
-### Listen to atom value changes
+## Get Atom single key value
+
+If atom's value is an object, we can get a value from the atom directly using `atom.get` function.
+
+```ts
+import { atom } from '@mongez/atom-react';
+
+const userAtom = atom({
+    name: 'user',
+    default: {
+        name: 'Hasan',
+        address: {
+            city: 'New York',
+        }
+    }
+});
+
+console.log(userAtom.get('name')); // Hasan
+```
+
+Dot Notation is also supported.
+
+```ts
+console.log(userAtom.get('address.city')); // New York
+```
+
+If key doesn't exist, return default value instead.
+
+```ts
+console.log(userAtom.get('email', 'default@email.com')); // default@email.com
+```
+
+
+## Listen to atom value changes
 
 This is what happens with `useAtom` hook, it listens to the atom's value change using `onChange` method.
 
@@ -347,6 +433,109 @@ useEffect(() => {
 }, []);
 ```
 
+## Watch For Partial Change
+
+Sometimes you may need to watch for only a key in the atom's value object, the `atom.watch` function is the perfect way to achieve this.
+
+> Please note this only works if the atom's default is an object or an array.
+
+```ts
+// anywhere in your app
+import { atom } from '@mongez/react-atom';
+
+const userAtom = atom({
+    name: 'user',
+    default: {
+        name: 'Hasan',
+        address: {
+            city: 'New York',
+        }
+    }
+});
+
+userAtom.watch('name', (newName, oldName) => {
+    console.log(newName, oldName); // 'Hasan', 'Ali'
+});
+
+
+// later in the app
+userAtom.update({
+    ...userAtom.value,
+    name: 'Ali',
+});
+```
+
+Dot notation is allowed too.
+
+```ts
+// anywhere in your app
+import { atom } from '@mongez/react-atom';
+
+const userAtom = atom({
+    name: 'user',
+    default: {
+        name: 'Hasan',
+        address: {
+            city: 'New York',
+        }
+    }
+});
+
+userAtom.watch('address.cty', (newCity, oldCity) => {
+    console.log(newName, oldName); // 'New York', 'Cairo'
+});
+
+// later in the app
+userAtom.update({
+    ...userAtom.value,
+    address: {
+        ...userAtom.value.address,
+        city: 'Cairo',
+    },
+});
+```
+
+## Use Atom Watch Hook
+
+When using atom inside React Component, we can use `useAtomWatch` to listen form atom key change.
+
+```tsx
+export function SomeComponent() {
+    const [city, setCity] = useState(userAtom.get('address.city'));
+
+    useAtomWatch(userAtom, 'address.city', setCity);
+
+    // first time will render New York then it will render Cairo
+
+    return (
+        <>
+            Current City: {city}
+        </>
+    )
+}
+```
+
+The interesting thing here is the component will be re-rendered **only and only if** the `address.city` is changed regardless the other atom's value changes.
+
+
+## Use Atom Watcher Hook
+
+Alternatively, we can use `useAtomWatcher` hook to achieve the previous behavior in one step.
+
+```tsx
+export function SomeComponent() {
+    const [city, setCity] = useAtomWatcher(userAtom, 'address.city');
+
+    // first time will render New York then it will render Cairo
+
+    return (
+        <>
+            Current City: {city}
+        </>
+    )
+}
+```
+
 ## Value Mutation Before Update
 
 Sometimes it's useful to mutate the value before updating it in the atom, this can be achieved via defining `beforeUpdate` method in the atom declaration.
@@ -369,7 +558,7 @@ multipleAtom.update(4);
 console.log(multipleAtom.value); // 8
 ```
 
-### Listen to atom destruction
+## Listen to atom destruction
 
 To detect atom destruction when `destroy()` method, use `onDestroy`.
 
@@ -384,5 +573,11 @@ const subscription = currencyAtom.destroy((atom) => {
 
 ## Change Log
 
+- V1.2.0 (25 Apr 2022)
+    - Added [atom.watch Function](#watch-for-partial-change) feature.
+    - Added [Atom.get Function](#get-atom-single-key-value).
+    - Added [Atom.change Function](#change-atom-single-key).
+    - Added [useAtomWatcher Hook](#use-atom-watcher-hook).
+    - Added [useAtomWatch Hook](#use-atom-watch-hook).
 - V1.1.0 (25 Apr 2022)
     - Added [beforeUpdate](#value-mutation-before-update) function.

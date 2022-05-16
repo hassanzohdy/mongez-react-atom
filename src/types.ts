@@ -1,9 +1,11 @@
 import { EventSubscription } from "@mongez/events";
 
+export type AtomPartialChangeCallback = (newValue: any, oldValue: any, atom: Atom) => void;
+
 /**
- * Default props
+ * Atom Options
  */
-export type AtomProps = {
+export type AtomOptions = {
   /**
    * Atom unique name
    */
@@ -19,7 +21,7 @@ export type AtomProps = {
 };
 
 /**
- * An atom object
+ * The Atom Instance
  */
 export type Atom = {
   /**
@@ -45,6 +47,11 @@ export type Atom = {
    */
   update: (value: ((oldValue: any, atom: Atom) => any) | any) => void;
   /**
+   * Change only one key of the atom
+   * Works only if atom's value is an object
+   */
+  change: (key: string, newValue: any) => void;
+  /**
    * Get current value
    */
   get value(): any;
@@ -68,4 +75,17 @@ export type Atom = {
    * An event listener to the atom destruction
    */
   onDestroy(callback: (atom: Atom) => void): EventSubscription;
+
+  /**
+   * Watch for atom value change
+   * This can be used only when atom's default value is an object or an array
+   * The key accepts dot.notation syntax
+   */
+  watch?: (key: string, callback: AtomPartialChangeCallback) => EventSubscription;
+
+  /**
+   * Get value from atom's value
+   * Works only if atom's value is an object
+   */
+  get(key: string, defaultValue?: any): any;
 };
