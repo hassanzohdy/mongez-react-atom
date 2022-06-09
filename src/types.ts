@@ -1,6 +1,10 @@
 import { EventSubscription } from "@mongez/events";
 
-export type AtomPartialChangeCallback = (newValue: any, oldValue: any, atom: Atom) => void;
+export type AtomPartialChangeCallback = (
+  newValue: any,
+  oldValue: any,
+  atom: Atom
+) => void;
 
 /**
  * Atom Options
@@ -16,9 +20,13 @@ export type AtomOptions = {
    */
   default: any;
   /**
-   * Make adjustments on the value before updating the atom 
+   * Make adjustments on the value before updating the atom
    */
   beforeUpdate?: (newValue: any) => any;
+  /**
+   * Set getter function, works only when atom's value is object
+   */
+  get?: (key: string, defaultValue?: any, atomValue?: any) => any;
 };
 
 /**
@@ -83,7 +91,10 @@ export type Atom = {
    * This can be used only when atom's default value is an object or an array
    * The key accepts dot.notation syntax
    */
-  watch?: (key: string, callback: AtomPartialChangeCallback) => EventSubscription;
+  watch?: (
+    key: string,
+    callback: AtomPartialChangeCallback
+  ) => EventSubscription;
 
   /**
    * Get value from atom's value

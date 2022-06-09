@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Obj } from "@mongez/reinforcements";
 import events, { EventSubscription } from "@mongez/events";
 import { Atom, AtomPartialChangeCallback, AtomOptions } from "./types";
@@ -58,12 +58,25 @@ function createAtom(data: AtomOptions): Atom {
 
   let changes = {};
 
+  let watchers = {};
+
   return {
     default: defaultValue,
     currentValue: atomValue,
     name: data.name,
     watch(key: string, callback: AtomPartialChangeCallback): EventSubscription {
-      return events.subscribe(event(`update.partial.${key}`), callback);
+      if (!watchers[key]) {
+        watchers[key] = [];
+      }
+
+      watchers[key].push(callback);
+      let callbackIndex = watchers[key].length - 1;
+
+      return {
+        unsubscribe: () => {
+          watchers[key].splice(callbackIndex, 1);
+        },
+      } as EventSubscription;
     },
     get defaultValue() {
       return this.default;
@@ -86,58 +99,47 @@ function createAtom(data: AtomOptions): Atom {
       });
     },
     update(newValue: any): void {
+      const oldValue = this.currentValue;
+
+      if (typeof newValue === "function") {
+        newValue = newValue(oldValue, this);
+      }
+
+      if (data.beforeUpdate) {
+        newValue = data.beforeUpdate(newValue);
+      }
+
+      this.currentValue = newValue;
       debounce(() => {
-        const oldValue = this.currentValue;
-
-        if (typeof newValue === "function") {
-          newValue = newValue(oldValue, this);
-        }
-
-        if (data.beforeUpdate) {
-          newValue = data.beforeUpdate(newValue);
-        }
-
-        this.currentValue = newValue;
+        events.trigger(event("update"), this.currentValue, oldValue, this);
 
         if (atomValueIsObject) {
-          if (newValue && typeof newValue === "object") {
-            let flattenOldValue = Obj.flatten(oldValue);
-            let flattenNewValue = Obj.flatten(newValue);
-
-            for (let key in flattenOldValue) {
-              if (!Object.prototype.hasOwnProperty.call(flattenNewValue, key)) {
-                events.trigger(event(`update.partial.${key}`), undefined, flattenOldValue[key], this);
-              } else if (flattenOldValue[key] !== flattenNewValue[key]) {
-                events.trigger(event(`update.partial.${key}`), flattenNewValue[key], flattenOldValue[key], this);
-              }
-            }
-
-            for (let key in flattenNewValue) {
-              if (!Object.prototype.hasOwnProperty.call(flattenOldValue, key)) {
-                events.trigger(event(`update.partial.${key}`), flattenNewValue[key], undefined, this);
-              }
+          for (let key in watchers) {
+            let keyOldValue = Obj.get(oldValue, key);
+            let keyNewValue = Obj.get(newValue, key);
+            if (keyOldValue !== keyNewValue) {
+              watchers[key].forEach((callback) =>
+                callback(keyNewValue, keyOldValue)
+              );
             }
           }
         }
-
-        events.trigger(
-          event('update'),
-          this.currentValue,
-          oldValue,
-          this
-        );
       });
     },
     onChange(
       callback: (newValue: any, oldValue: any, atom: Atom) => void
     ): EventSubscription {
-      return events.subscribe(event('update'), callback);
+      return events.subscribe(event("update"), callback);
     },
     get(key: string, defaultValue: any = null): any {
+      if (data.get) {
+        return data.get(key, defaultValue, this.currentValue);
+      }
+
       return Obj.get(this.currentValue, key, defaultValue);
     },
     destroy() {
-      events.trigger(event('delete'), this);
+      events.trigger(event("delete"), this);
 
       events.unsubscribeNamespace(atomEvent);
       const atomIndex: number = atoms.findIndex(
@@ -202,7 +204,7 @@ export function useAtomState(atom: Atom): any {
 export function useAtom(atom: Atom): any {
   const [value, setValue] = useState(atom.value);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const event: EventSubscription = atom.onChange(setValue);
 
     return () => event.unsubscribe();
@@ -224,7 +226,11 @@ export function useAtom(atom: Atom): any {
 /**
  * Watch for atom key's change
  */
-export function useAtomWatch(atom: Atom, key: string, callback: AtomPartialChangeCallback) {
+export function useAtomWatch(
+  atom: Atom,
+  key: string,
+  callback: AtomPartialChangeCallback
+) {
   useEffect(() => {
     const event = atom.watch(key, callback);
 
