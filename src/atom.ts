@@ -3,7 +3,7 @@ import { Obj } from "@mongez/reinforcements";
 import events, { EventSubscription } from "@mongez/events";
 import { Atom, AtomPartialChangeCallback, AtomOptions } from "./types";
 
-let timeoutId = undefined;
+let timeoutId: number | undefined = undefined;
 
 function debounce(callback, wait: number = 0) {
   // Clear previous delayed action, if existent
@@ -202,7 +202,7 @@ export function useAtomState(atom: Atom): any {
  * Use the given atom and return the atom value and atom value state changer
  */
 export function useAtom(atom: Atom): any {
-  const [value, setValue] = useState(atom.value);
+  const [, setValue] = useState(atom.value);
 
   useEffect(() => {
     const event: EventSubscription = atom.onChange(setValue);
@@ -211,14 +211,13 @@ export function useAtom(atom: Atom): any {
   }, []);
 
   return [
-    value,
+    atom.value,
     (newValue: any) => {
       if (typeof newValue === "function") {
-        newValue = newValue(value, atom);
+        newValue = newValue(atom.value, atom);
       }
 
       atom.update(newValue);
-      setValue(newValue);
     },
   ];
 }

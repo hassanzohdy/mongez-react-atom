@@ -91,7 +91,7 @@ export type Atom = {
    * This can be used only when atom's default value is an object or an array
    * The key accepts dot.notation syntax
    */
-  watch?: (
+  watch: (
     key: string,
     callback: AtomPartialChangeCallback
   ) => EventSubscription;

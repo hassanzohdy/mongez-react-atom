@@ -631,7 +631,9 @@ Regardless if you're using `atom.update` or `atom.change` and calling it multipl
 
 ## Change Log
 
-- V1.2.2 (9 Jun 2022)
+- V1.2.3 (01 July 2022)
+- Enhanced Atom Hooks.
+- V1.2.2 (09 Jun 2022)
 - Enhanced Atom Watcher.
 - V1.2.1 (16 Apr 2022)
   - Added [get handler function](#get-handler-function).
