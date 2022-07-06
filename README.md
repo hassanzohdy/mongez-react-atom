@@ -582,7 +582,7 @@ Alternatively, we can use `useAtomWatcher` hook to achieve the previous behavior
 import { useAtomWatcher } from "@mongez/react-atom";
 
 export function SomeComponent() {
-  const [city, setCity] = useAtomWatcher(userAtom, "address.city");
+  const city = useAtomWatcher(userAtom, "address.city");
 
   // first time will render New York then it will render Cairo
 
@@ -631,6 +631,8 @@ Regardless if you're using `atom.update` or `atom.change` and calling it multipl
 
 ## Change Log
 
+- V1.2.4 (6 July 2022)
+- Enhanced Atom Watcher.
 - V1.2.3 (01 July 2022)
 - Enhanced Atom Hooks.
 - V1.2.2 (09 Jun 2022)

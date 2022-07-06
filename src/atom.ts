@@ -241,9 +241,10 @@ export function useAtomWatch(
  * Listen for change for the given atom
  */
 export function useAtomWatcher(atom: Atom, key: string) {
-  const [value, setValue] = useState(atom.get(key));
+  const value = atom.get(key);
+  const [, setValue] = useState(value);
 
   useAtomWatch(atom, key, setValue);
 
-  return [value, setValue];
+  return value;
 }
