@@ -666,6 +666,8 @@ Regardless if you're using `atom.update` or `atom.change` and calling it multipl
 ## Change Log
 
 - V1.2.5 (25 July 2022)
+- Fixed return type of `Atom.useWatcher`
+- V1.2.5 (25 July 2022)
   - Added `useWatcher` and `useWatch` embedded in the atom itself.
 - V1.2.4 (6 July 2022)
 - Enhanced Atom Watcher.

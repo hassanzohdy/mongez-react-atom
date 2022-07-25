@@ -109,5 +109,5 @@ export type Atom = {
   /**
    * An alias for useAtomWatch but specific for this atom
    */
-  useWatcher: (key: string) => void;
+  useWatcher<T>(key: string): T;
 };
