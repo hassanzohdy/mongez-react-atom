@@ -52,18 +52,24 @@ function createAtom(data: AtomOptions): Atom {
     atomValueIsObject = true;
   }
 
-  let atomEvent: string = `atoms.${data.name}`;
+  const atomEvent: string = `atoms.${data.name}`;
 
   const event = (type: string): string => `${atomEvent}.${type}`;
 
-  let changes = {};
+  const changes = {};
 
-  let watchers = {};
+  const watchers = {};
 
   return {
     default: defaultValue,
     currentValue: atomValue,
     name: data.name,
+    useWatch(key: string, callback: AtomPartialChangeCallback) {
+      return useAtomWatch(this, key, callback);
+    },
+    useWatcher(key: string) {
+      return useAtomWatcher(this, key);
+    },
     watch(key: string, callback: AtomPartialChangeCallback): EventSubscription {
       if (!watchers[key]) {
         watchers[key] = [];

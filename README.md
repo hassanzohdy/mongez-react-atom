@@ -574,6 +574,24 @@ export function SomeComponent() {
 
 The interesting thing here is the component will be re-rendered **only and only if** the `address.city` is changed regardless the other atom's value changes.
 
+## Internal Atom Watch Hook
+
+> Added in v1.2.5
+
+Alternatively, you can directly use the atom itself to listen for changes for specific key
+
+```tsx
+export function SomeComponent() {
+  const [city, setCity] = useState(userAtom.get("address.city"));
+
+  userAtom.useWatch("address.city", setCity);
+
+  // first time will render New York then it will render Cairo
+
+  return <>Current City: {city}</>;
+}
+```
+
 ## Use Atom Watcher Hook
 
 Alternatively, we can use `useAtomWatcher` hook to achieve the previous behavior in one step.
@@ -583,6 +601,22 @@ import { useAtomWatcher } from "@mongez/react-atom";
 
 export function SomeComponent() {
   const city = useAtomWatcher(userAtom, "address.city");
+
+  // first time will render New York then it will render Cairo
+
+  return <>Current City: {city}</>;
+}
+```
+
+## Internal Atom Watcher Hook
+
+> Added in 1.2.5
+
+You can directly use the atom itself to listen for changes for specific key and perform component rerender.
+
+```tsx
+export function SomeComponent() {
+  const city = userAtom.useWatcher("address.city");
 
   // first time will render New York then it will render Cairo
 
@@ -631,6 +665,8 @@ Regardless if you're using `atom.update` or `atom.change` and calling it multipl
 
 ## Change Log
 
+- V1.2.5 (25 July 2022)
+  - Added `useWatcher` and `useWatch` embedded in the atom itself.
 - V1.2.4 (6 July 2022)
 - Enhanced Atom Watcher.
 - V1.2.3 (01 July 2022)

@@ -101,4 +101,13 @@ export type Atom = {
    * Works only if atom's value is an object
    */
   get(key: string, defaultValue?: any): any;
+
+  /**
+   * An alias for useAtomWatch but specific for this atom
+   */
+  useWatch: (key: string, callback: AtomPartialChangeCallback) => void;
+  /**
+   * An alias for useAtomWatch but specific for this atom
+   */
+  useWatcher: (key: string) => void;
 };
