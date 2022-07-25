@@ -64,11 +64,11 @@ export type Atom = {
   /**
    * Get current value
    */
-  get value(): any;
+  readonly value: any;
   /**
    * Get default value that started with atom creation
    */
-  get defaultValue(): any;
+  defaultValue: any;
   /**
    * Destroy the atom and remove it from atmos list
    * This will trigger an atom destroy event then unsubscribe all atom events

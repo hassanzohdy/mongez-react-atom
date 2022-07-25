@@ -665,7 +665,9 @@ Regardless if you're using `atom.update` or `atom.change` and calling it multipl
 
 ## Change Log
 
-- V1.2.5 (25 July 2022)
+- V1.2.7 (25 July 2022)
+  - Fixed undefined bind value for object methods when called with `atom.get` method.
+- V1.2.6 (25 July 2022)
 - Fixed return type of `Atom.useWatcher`
 - V1.2.5 (25 July 2022)
   - Added `useWatcher` and `useWatch` embedded in the atom itself.

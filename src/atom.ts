@@ -41,6 +41,33 @@ export function getAtomValue(atom: string | Atom): any {
   return atom.value;
 }
 
+/**
+ * Watch for atom key's change
+ */
+export function useAtomWatch(
+  atom: Atom,
+  key: string,
+  callback: AtomPartialChangeCallback
+) {
+  useEffect(() => {
+    const event = atom.watch(key, callback);
+
+    return () => event.unsubscribe();
+  }, [atom, key, callback]);
+}
+
+/**
+ * Listen for change for the given atom
+ */
+export function useAtomWatcher(atom: Atom, key: string) {
+  const value = atom.get(key);
+  const [, setValue] = useState(value);
+
+  useAtomWatch(atom, key, setValue);
+
+  return value;
+}
+
 function createAtom(data: AtomOptions): Atom {
   let defaultValue = data.default;
   let atomValue = data.default;
@@ -56,9 +83,11 @@ function createAtom(data: AtomOptions): Atom {
 
   const event = (type: string): string => `${atomEvent}.${type}`;
 
-  const changes = {};
+  let changes = {};
 
   const watchers = {};
+
+  defaultValue.bind && defaultValue.bind(defaultValue);
 
   return {
     default: defaultValue,
@@ -142,7 +171,9 @@ function createAtom(data: AtomOptions): Atom {
         return data.get(key, defaultValue, this.currentValue);
       }
 
-      return Obj.get(this.currentValue, key, defaultValue);
+      let value = Obj.get(this.currentValue, key, defaultValue);
+
+      return value.bind ? value.bind(this.currentValue) : value;
     },
     destroy() {
       events.trigger(event("delete"), this);
@@ -189,22 +220,6 @@ export function atomsList(): Atom[] {
 }
 
 /**
- * Get current atom value from state
- * This will re-render the component once the atom's value is changed
- * @returns
- */
-export function useAtomValue(atom: Atom): any {
-  return useAtom(atom)[0];
-}
-
-/**
- * Get the atom value state changer
- */
-export function useAtomState(atom: Atom): any {
-  return useAtom(atom)[1];
-}
-
-/**
  * Use the given atom and return the atom value and atom value state changer
  */
 export function useAtom(atom: Atom): any {
@@ -214,7 +229,7 @@ export function useAtom(atom: Atom): any {
     const event: EventSubscription = atom.onChange(setValue);
 
     return () => event.unsubscribe();
-  }, []);
+  }, [atom]);
 
   return [
     atom.value,
@@ -229,28 +244,17 @@ export function useAtom(atom: Atom): any {
 }
 
 /**
- * Watch for atom key's change
+ * Get current atom value from state
+ * This will re-render the component once the atom's value is changed
+ * @returns
  */
-export function useAtomWatch(
-  atom: Atom,
-  key: string,
-  callback: AtomPartialChangeCallback
-) {
-  useEffect(() => {
-    const event = atom.watch(key, callback);
-
-    return () => event.unsubscribe();
-  }, [key]);
+export function useAtomValue(atom: Atom): any {
+  return useAtom(atom)[0];
 }
 
 /**
- * Listen for change for the given atom
+ * Get the atom value state changer
  */
-export function useAtomWatcher(atom: Atom, key: string) {
-  const value = atom.get(key);
-  const [, setValue] = useState(value);
-
-  useAtomWatch(atom, key, setValue);
-
-  return value;
+export function useAtomState(atom: Atom): any {
+  return useAtom(atom)[1];
 }
