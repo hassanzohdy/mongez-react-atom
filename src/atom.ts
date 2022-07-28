@@ -87,14 +87,15 @@ function createAtom(data: AtomOptions): Atom {
 
   const watchers = {};
 
-  defaultValue.bind && defaultValue.bind(defaultValue);
-
   return {
     default: defaultValue,
     currentValue: atomValue,
     name: data.name,
     useWatch(key: string, callback: AtomPartialChangeCallback) {
       return useAtomWatch(this, key, callback);
+    },
+    useValue() {
+      return useAtomValue(this);
     },
     useWatcher(key: string) {
       return useAtomWatcher(this, key);
@@ -173,7 +174,7 @@ function createAtom(data: AtomOptions): Atom {
 
       let value = Obj.get(this.currentValue, key, defaultValue);
 
-      return value.bind ? value.bind(this.currentValue) : value;
+      return value?.bind ? value.bind(this.currentValue) : value;
     },
     destroy() {
       events.trigger(event("delete"), this);

@@ -101,7 +101,11 @@ export type Atom = {
    * Works only if atom's value is an object
    */
   get(key: string, defaultValue?: any): any;
-
+  /**
+   * Watch for atom's value change and return it
+   * When the atom's value is changed, the component will be rerendered again.
+   */
+  useValue: () => any;
   /**
    * An alias for useAtomWatch but specific for this atom
    */

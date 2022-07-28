@@ -132,6 +132,32 @@ export default function Footer() {
 }
 ```
 
+## Atom useValue
+
+> Added in 1.3.0
+
+Alternatively, you can get the same exact effect of `useAtomValue` by using `atom.useValue` directly from the atom itself to watch for the atom's value change.
+
+This will of course cause a component rerender event.
+
+`Footer.tsx`
+
+```tsx
+import React from "react";
+import { currencyAtom } from "~/src/atoms";
+
+export default function Footer() {
+  const currency = currencyAtom.useValue();
+
+  return (
+    <>
+      <h1>Footer</h1>
+      You're using our application in {currency} Currency.
+    </>
+  );
+}
+```
+
 ## Getting Atom State Value Updater Only
 
 This can be also done with the atom value updater by using `useAtomState`
@@ -665,6 +691,9 @@ Regardless if you're using `atom.update` or `atom.change` and calling it multipl
 
 ## Change Log
 
+- V1.3.0 (28 July 2022)
+  - Fixed checking bind on null values.
+  - Added `useValue` method.
 - V1.2.7 (25 July 2022)
   - Fixed undefined bind value for object methods when called with `atom.get` method.
 - V1.2.6 (25 July 2022)
