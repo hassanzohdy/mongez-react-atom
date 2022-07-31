@@ -6,9 +6,9 @@ A simple state management tool for React Js.
 
 The main purpose of the birth of this package is to work with a simple and performant state management tool to handle data among components.
 
-## This is not a replacement for Redux
+## This can be a replacement for Redux
 
-Redux is a powerful state management tool, the purpose of this package is to use a simple state management which provides a good performance with large applications, however, its features is limited compared to Redux.
+Redux is a powerful state management tool, the purpose of this package is to use a simple state management which provides a good performance with large applications.
 
 ## Installation
 
