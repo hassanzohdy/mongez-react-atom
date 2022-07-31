@@ -847,7 +847,7 @@ Updates item's value by for the given index
 
 ```tsx
 const index = 2;
-todoListAtom.updateItem(2, {
+todoListAtom.replaceItem(2, {
   title: "New Title",
 });
 ```
