@@ -1,6 +1,6 @@
 {
     "name": "@mongez/react-atom",
-    "version": "1.4.3",
+    "version": "1.4.4",
     "description": "A simple state management tool for React Js.",
     "main": "src/index.ts",
     "author": "hassanzohdy",
@@ -12,5 +12,16 @@
     "dependencies": {
         "@mongez/events": "^1.0.9",
         "@mongez/reinforcements": "^1.0.21"
-    }
+    },
+    "keywords": [
+        "react",
+        "state",
+        "atom",
+        "state management",
+        "state management tool",
+        "state management library",
+        "recoil",
+        "Jotai",
+        "state management library for react"
+    ]
 }
