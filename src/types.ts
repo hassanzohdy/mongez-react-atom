@@ -68,12 +68,14 @@ export type Atom = {
   /**
    * Get default value that started with atom creation
    */
-  defaultValue: any;
+  readonly defaultValue: any;
+
   /**
    * Destroy the atom and remove it from atmos list
    * This will trigger an atom destroy event then unsubscribe all atom events
    */
   destroy: () => void;
+
   /**
    * An event listener to the atom value change
    * The callback accepts the new updated value, the old value and an atom instance
@@ -101,17 +103,94 @@ export type Atom = {
    * Works only if atom's value is an object
    */
   get(key: string, defaultValue?: any): any;
+
   /**
    * Watch for atom's value change and return it
    * When the atom's value is changed, the component will be rerendered again.
    */
   useValue: () => any;
+
   /**
    * An alias for useAtomWatch but specific for this atom
    */
   useWatch: (key: string, callback: AtomPartialChangeCallback) => void;
+
   /**
    * An alias for useAtomWatch but specific for this atom
    */
   useWatcher<T>(key: string): T;
+
+  /**
+   * Remove item by the given index or callback
+   *
+   * Works only if atom's value is an array
+   * This will trigger the atom event change
+   */
+  removeItem: (
+    indexOrCallback: number | ((item: any, itemIndex: number) => boolean)
+  ) => void;
+
+  /**
+   * Remove list of items from the current atom for the given list of indexes or callback
+   *
+   * Works only if atom's value is an array
+   * This will trigger the atom event change
+   */
+  removeItems: (
+    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean)
+  ) => void;
+
+  /**
+   * Add item to the end of the atom's value
+   *
+   * Works only if atom's value is an array
+   * This will trigger the atom event change
+   */
+  addItem: (item: any) => void;
+
+  /**
+   * Get item by the given index or callback
+   *
+   * Works only if atom's value is an array
+   */
+  getItem: (
+    indexOrCallback: number | ((item: any, index: number) => any)
+  ) => any;
+
+  /**
+   * Get item index by the given item
+   *
+   * Works only if atom's value is an array
+   */
+  getItemIndex: (
+    callback: (item: any, index: number, array: any[]) => any
+  ) => number;
+
+  /**
+   * Replace item by the given index
+   *
+   * Works only if atom's value is an array
+   * This will trigger the atom event change
+   */
+  replaceItem: (index: number, item: any) => void;
+
+  /**
+   * Modify the atom's array items by the given callback
+   *
+   * Works only if atom's value is an array
+   * This will trigger the atom event change
+   */
+  map: (callback: (item: any, index: number, array: any[]) => any) => void;
+
+  /**
+   * Get the atom's value type
+   */
+  readonly type;
+
+  /**
+   * Get the atom's value length
+   *
+   * Works only if atom's value is an array
+   */
+  readonly length: number;
 };

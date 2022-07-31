@@ -134,7 +134,7 @@ export default function Footer() {
 
 ## Atom useValue
 
-> Added in 1.3.0
+> Added in v1.3.0
 
 Alternatively, you can get the same exact effect of `useAtomValue` by using `atom.useValue` directly from the atom itself to watch for the atom's value change.
 
@@ -636,7 +636,7 @@ export function SomeComponent() {
 
 ## Internal Atom Watcher Hook
 
-> Added in 1.2.5
+> Added in v1.2.5
 
 You can directly use the atom itself to listen for changes for specific key and perform component rerender.
 
@@ -689,8 +689,259 @@ const subscription = currencyAtom.destroy((atom) => {
 
 Regardless if you're using `atom.update` or `atom.change` and calling it multiple times, it will only trigger the update events only once as calling any of these methods are debounced.
 
+## Atom Type
+
+> Added in v1.4.0
+
+We can get the type of the atom's value using `atom.type` property.
+
+```tsx
+const currencyAtom = atom({
+  name: "currency",
+  default: "USD",
+});
+
+console.log(currencyAtom.type); // string
+```
+
+If the default value is an array it will be returned as array not object.
+
+```tsx
+const todoListAtom = atom({
+  name: "todo",
+  default: [],
+});
+
+console.log(todoListAtom.type); // array
+```
+
+## Working with atom as arrays
+
+> Added in v1.4.0
+
+> Works only if the atom's default value is array
+
+We can get use of the following methods to make our life easier.
+
+- [Add Item](#add-item) add new item to the atom's array.
+- [Remove Item](#remove-item) Remove item from the atom's array.
+- [Remove Items](#remove-items) Remove items from the atom's array.
+- [Replace Item](#replace-item) Update item'value in the atom's array.
+- [Get Item](#get-item) Get item from the atom's array.
+- [Get Item Index](#get-item-index) Get item' index from the atom's array.
+- [Items length](#items-item) Get the atom's array length.
+
+### Add Item
+
+> Added in v1.4.0
+
+`atom.addItem(item: any) => void`
+
+This method will allow you adding item to the array, it will also trigger the change event.
+
+```tsx
+const todoListAtom = atom({
+  name: "todo",
+  default: [],
+});
+
+// SomeComponent.tsx
+export function TodoList() {
+  const items = todoListAtom.useValue();
+
+  const addNewItem = () =>
+    todoListAtom.addItem({
+      title: "My first task",
+      id: 213,
+    }); // this will update the items and re-render the component again.
+
+  return (
+    <>
+      Total Items: {items.length}
+      <button onClick={addNewItem}>Add Item</button>
+    </>
+  );
+}
+```
+
+### Remove Item
+
+> Added in v1.4.0
+
+> Works only if the atom's default value is array
+
+`atom.removeItem(index: number | (item: any, index: number) => number) => void`
+
+To remove an item from the atom's array we can use the `removeItem` method.
+
+```tsx
+const todoListAtom = atom({
+  name: "todo",
+  default: [],
+});
+
+// SomeComponent.tsx
+export function TodoList() {
+  const items = todoListAtom.useValue();
+
+  const addNewItem = () =>
+    todoListAtom.addItem({
+      title: "My first task",
+      id: 213,
+    }); // this will update the items and re-render the component again.
+
+  return (
+    <>
+      Total Items: {items.length}
+      <button onClick={addNewItem}>Add Item</button>
+      {items.map((item, index) => (
+        <div key={index}>
+          <div>Title: {item.title}</div>
+          <button onClick={() => todoListAtom.removeItem(index)}>Remove</button>
+        </div>
+      ))}
+    </>
+  );
+}
+```
+
+This will remove the item by the given index.
+
+It can also be removed by passing a callback to remove the item from the list.
+
+```tsx
+todoListAtom.removeItem((item) => item.id > 100);
+```
+
+> Please note this will only remove the first matched item.
+
+To remove multiple items, use `removeItems` method instead.
+
+### Remove Items
+
+> Added in v1.4.0
+
+> Works only if the atom's default value is array
+
+`atom.removeItem(indexes: number[] | (item: any, index: number) => number) => void`
+
+Works exactly like `removeItem` except that it accepts an array of indexes or a callback function to remove multiple items.
+
+```tsx
+todoListAtom.removeItems([0, 2, 3]); // will remove index 0, 2 and 3
+
+// OR
+
+todoListAtom.remoteItems((item) => item.id > 1);
+```
+
+### Replace Item
+
+> Added in v1.4.0
+
+> Works only if the atom's default value is array
+
+`atom.replaceItem(index: number, newItemValue: any) => void`
+
+Updates item's value by for the given index
+
+```tsx
+const index = 2;
+todoListAtom.updateItem(2, {
+  title: "New Title",
+});
+```
+
+### Get Item
+
+> Added in v1.4.0
+
+> Works only if the atom's default value is array
+
+`atom.getItem(indexOrCallback: number | ((item: any, index: number) => any)) => any`
+
+Get an item from the array using item index or callback function.
+
+```tsx
+const index = 2;
+
+const item = todoListAtom.getItem(index);
+
+// Or
+const itemId = 15111; // dummy id
+const otherItem = todoListAtom.getItem((item) => item.id === itemId);
+```
+
+### Get Item Index
+
+> Added in v1.4.0
+
+> Works only if the atom's default value is array
+
+`atom.getItemIndex(callback: (item: any, index: number, array: any[]) => any) => any`
+
+Get the index of the first matched element to the given callback.
+
+```tsx
+const itemId = 15111; // dummy id
+const itemIndex = todoListAtom.getItemIndex((item) => item.id === itemId); // 2 for example
+```
+
+### Atom map
+
+> Added in v1.4.0
+
+> Works only if the atom's default value is array
+
+`atom.map(callback: (item: any, index: number, array: any[]) => any) => any`
+
+Walk over every item in the array and update it, this will trigger the change event.
+
+```tsx
+const numbersAtom = atom({
+  name: "number",
+  default: [1, 2, 3, 4],
+});
+
+// multiple the atom's array numbers by 2
+numbersAtom.map((number) => number * 2);
+
+console.log(numbersAtom.value); // [2, 4, 6, 8];
+```
+
+## Get Atom's length
+
+> Added in v1.4.0
+
+This can be useful feature when working with arrays or strings, `atom.length` returns the count of total elements/characters of the atom's current value.
+
+```tsx
+const todoListAtom = atom({
+  name: "todo",
+  default: [],
+});
+
+console.log(todoListAtom.length); // 0
+
+todoListAtom.addItem({
+  title: "My first task",
+  id: 213,
+});
+
+console.log(todoListAtom.length); // 1
+```
+
 ## Change Log
 
+- V1.4.0 (31 July 2022)
+  - Added [atom.addItem](#add-item) method: Add new item to the atom.
+  - Added [atom.removeItem](#remove-item) method: Add new item to the atom.
+  - Added [atom.replaceItem](#replace-item) method: update item in the atom's array.
+  - Added [atom.getItem](#get-item) method: Get an item from the atom's array.
+  - Added [atom.getItemIndex](#get-item) method: Get item index from the atom's array.
+  - Added [atom.map](#atom-map): Map over the atom's values and trigger an update over it.
+  - Added [atom.length](#atom-length): Get the length of the atom.
+  - Added [atom.type](#atom-type): Get the atom's value type.
 - V1.3.0 (28 July 2022)
   - Fixed checking bind on null values.
   - Added `useValue` method.

@@ -79,6 +79,8 @@ function createAtom(data: AtomOptions): Atom {
     atomValueIsObject = true;
   }
 
+  const atomType = Array.isArray(defaultValue) ? "array" : typeof defaultValue;
+
   const atomEvent: string = `atoms.${data.name}`;
 
   const event = (type: string): string => `${atomEvent}.${type}`;
@@ -91,6 +93,59 @@ function createAtom(data: AtomOptions): Atom {
     default: defaultValue,
     currentValue: atomValue,
     name: data.name,
+    get type() {
+      return typeof atomType;
+    },
+    addItem(item) {
+      this.update([...this.value, item]);
+    },
+    removeItem(indexOrCallback) {
+      const index =
+        typeof indexOrCallback === "function"
+          ? this.value.findIndex(indexOrCallback)
+          : indexOrCallback;
+
+      if (index === -1) return;
+
+      this.update(this.value.filter((_, i) => i !== index));
+    },
+    removeItems(indexesOrCallback) {
+      this.update(
+        typeof indexesOrCallback === "function"
+          ? this.value.filter(
+              indexesOrCallback as (item: any, index: number) => boolean
+            )
+          : this.value.filter(
+              (_, i) => !(indexesOrCallback as number[]).includes(i)
+            )
+      );
+    },
+    getItem(indexOrCallback) {
+      const index =
+        typeof indexOrCallback === "function"
+          ? this.value.findIndex(indexOrCallback)
+          : indexOrCallback;
+
+      if (index === -1) return;
+
+      return this.value[index];
+    },
+    getItemIndex(callback) {
+      return this.value.findIndex(callback);
+    },
+    map(callback) {
+      this.update(this.value.map(callback));
+    },
+    get length() {
+      return this.value.length;
+    },
+    replaceItem(index, item) {
+      this.update([
+        ...this.value.slice(0, index),
+        item,
+        ...this.value.slice(index + 1),
+      ]);
+    },
     useWatch(key: string, callback: AtomPartialChangeCallback) {
       return useAtomWatch(this, key, callback);
     },
