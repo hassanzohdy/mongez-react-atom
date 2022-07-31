@@ -36,35 +36,41 @@ export type Atom = {
   /**
    * Atom unique name, set by the user
    */
-  // eslint-disable-next-line no-restricted-globals
   name: string;
+
   /**
    * Atom default value, set by the user
    */
   default: any;
+
   /**
    * Atom current value, initialized with the passed default value
    */
   currentValue: any;
+
   /**
    * Reset the atom value
    */
   reset: () => void;
+
   /**
    * Update atom value, the function accepts a new value,
    * or it can accept a callback that passes the old value and the atom instance
    * This will trigger atom event update
    */
   update: (value: ((oldValue: any, atom: Atom) => any) | any) => void;
+
   /**
    * Change only one key of the atom
    * Works only if atom's value is an object
    */
   change: (key: string, newValue: any) => void;
+
   /**
    * Get current value
    */
   readonly value: any;
+
   /**
    * Get default value that started with atom creation
    */
@@ -83,6 +89,7 @@ export type Atom = {
   onChange: (
     callback: (newValue: any, oldValue: any, atom: Atom) => void
   ) => EventSubscription;
+
   /**
    * An event listener to the atom destruction
    */
@@ -190,7 +197,7 @@ export type Atom = {
   /**
    * Get the atom's value length
    *
-   * Works only if atom's value is an array
+   * Works only if atom's value is an array or a string
    */
   readonly length: number;
 };

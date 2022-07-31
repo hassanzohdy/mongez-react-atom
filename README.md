@@ -230,37 +230,51 @@ export type Atom = {
    * Atom unique name, set by the user
    */
   name: string;
+
   /**
    * Atom default value, set by the user
    */
   default: any;
+
   /**
    * Atom current value, initialized with the passed default value
    */
   currentValue: any;
+
   /**
    * Reset the atom value
    */
   reset: () => void;
+
   /**
    * Update atom value, the function accepts a new value,
    * or it can accept a callback that passes the old value and the atom instance
    * This will trigger atom event update
    */
   update: (value: ((oldValue: any, atom: Atom) => any) | any) => void;
+
+  /**
+   * Change only one key of the atom
+   * Works only if atom's value is an object
+   */
+  change: (key: string, newValue: any) => void;
+
   /**
    * Get current value
    */
-  get value(): any;
+  readonly value: any;
+
   /**
    * Get default value that started with atom creation
    */
-  get defaultValue(): any;
+  readonly defaultValue: any;
+
   /**
    * Destroy the atom and remove it from atmos list
    * This will trigger an atom destroy event then unsubscribe all atom events
    */
   destroy: () => void;
+
   /**
    * An event listener to the atom value change
    * The callback accepts the new updated value, the old value and an atom instance
@@ -268,6 +282,7 @@ export type Atom = {
   onChange: (
     callback: (newValue: any, oldValue: any, atom: Atom) => void
   ) => EventSubscription;
+
   /**
    * An event listener to the atom destruction
    */
@@ -278,10 +293,106 @@ export type Atom = {
    * This can be used only when atom's default value is an object or an array
    * The key accepts dot.notation syntax
    */
-  watch?: (
+  watch: (
     key: string,
     callback: AtomPartialChangeCallback
   ) => EventSubscription;
+
+  /**
+   * Get value from atom's value
+   * Works only if atom's value is an object
+   */
+  get(key: string, defaultValue?: any): any;
+
+  /**
+   * Watch for atom's value change and return it
+   * When the atom's value is changed, the component will be rerendered again.
+   */
+  useValue: () => any;
+
+  /**
+   * An alias for useAtomWatch but specific for this atom
+   */
+  useWatch: (key: string, callback: AtomPartialChangeCallback) => void;
+
+  /**
+   * An alias for useAtomWatch but specific for this atom
+   */
+  useWatcher<T>(key: string): T;
+
+  /**
+   * Remove item by the given index or callback
+   *
+   * Works only if atom's value is an array
+   * This will trigger the atom event change
+   */
+  removeItem: (
+    indexOrCallback: number | ((item: any, itemIndex: number) => boolean)
+  ) => void;
+
+  /**
+   * Remove list of items from the current atom for the given list of indexes or callback
+   *
+   * Works only if atom's value is an array
+   * This will trigger the atom event change
+   */
+  removeItems: (
+    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean)
+  ) => void;
+
+  /**
+   * Add item to the end of the atom's value
+   *
+   * Works only if atom's value is an array
+   * This will trigger the atom event change
+   */
+  addItem: (item: any) => void;
+
+  /**
+   * Get item by the given index or callback
+   *
+   * Works only if atom's value is an array
+   */
+  getItem: (
+    indexOrCallback: number | ((item: any, index: number) => any)
+  ) => any;
+
+  /**
+   * Get item index by the given item
+   *
+   * Works only if atom's value is an array
+   */
+  getItemIndex: (
+    callback: (item: any, index: number, array: any[]) => any
+  ) => number;
+
+  /**
+   * Replace item by the given index
+   *
+   * Works only if atom's value is an array
+   * This will trigger the atom event change
+   */
+  replaceItem: (index: number, item: any) => void;
+
+  /**
+   * Modify the atom's array items by the given callback
+   *
+   * Works only if atom's value is an array
+   * This will trigger the atom event change
+   */
+  map: (callback: (item: any, index: number, array: any[]) => any) => void;
+
+  /**
+   * Get the atom's value type
+   */
+  readonly type;
+
+  /**
+   * Get the atom's value length
+   *
+   * Works only if atom's value is an array or a string
+   */
+  readonly length: number;
 };
 ```
 
@@ -356,7 +467,7 @@ We can also destroy the atom using `destroy()` method from the atom, this will s
 // anywhere in your app
 import { currencyAtom } from "~/src/atoms";
 
-currencyAtom.reset();
+currencyAtom.destroy();
 ```
 
 ## Getting atom name
@@ -378,7 +489,7 @@ If we want more dynamic way to get atoms, we can use `getAtom` utility to get th
 // anywhere in your app
 import { getAtom } from "~/src/atoms";
 
-const currencyAtomAtom = getAtom("currencyAtom");
+const currencyAtomAtom = getAtom("currency");
 ```
 
 If there is no atom with that name, it will return a `null` value instead.
@@ -475,7 +586,9 @@ const settingsAtom = atom({
     settings: {},
   },
   get(key: string, defaultValue: any = null, atomValue: any) {
-    return typeof atomValue[key] !== undefined
+    return atomValue[key] !== undefined
+      ? atomValue[key]
+      : atomValue.settings[key] !== undefined
       ? atomValue.settings[key]
       : defaultValue;
   },
@@ -515,7 +628,7 @@ import { currencyAtom } from "~/src/atoms";
 const [currency, setCurrency] = useState(currencyAtom.value);
 useEffect(() => {
   const onCurrencyChange = currencyAtom.onChange(setCurrency);
-  return () => onCurrencyChange.unsubscribe;
+  return () => onCurrencyChange.unsubscribe();
 }, []);
 ```
 
@@ -582,7 +695,7 @@ userAtom.update({
 
 ## Use Atom Watch Hook
 
-When using atom inside React Component, we can use `useAtomWatch` to listen form atom key change.
+When using atom inside React Component, we can use `useAtomWatch` to listen for atom key change.
 
 ```tsx
 import { useAtomWatch } from "@mongez/react-atom";
@@ -620,7 +733,7 @@ export function SomeComponent() {
 
 ## Use Atom Watcher Hook
 
-Alternatively, we can use `useAtomWatcher` hook to achieve the previous behavior in one step.
+We can also use `useAtomWatcher` hook to achieve the previous behavior in one step.
 
 ```tsx
 import { useAtomWatcher } from "@mongez/react-atom";
@@ -680,7 +793,7 @@ To detect atom destruction when `destroy()` method, use `onDestroy`.
 // anywhere in your app
 import { currencyAtom } from "~/src/atoms";
 
-const subscription = currencyAtom.destroy((atom) => {
+const subscription = currencyAtom.onDestroy((atom) => {
   //
 });
 ```
@@ -729,6 +842,7 @@ We can get use of the following methods to make our life easier.
 - [Replace Item](#replace-item) Update item'value in the atom's array.
 - [Get Item](#get-item) Get item from the atom's array.
 - [Get Item Index](#get-item-index) Get item' index from the atom's array.
+- [Items Map](#atom-map) Map over the atom's array items and replace it with a new one.
 - [Items length](#items-item) Get the atom's array length.
 
 ### Add Item
