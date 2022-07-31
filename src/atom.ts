@@ -94,7 +94,7 @@ function createAtom(data: AtomOptions): Atom {
     currentValue: atomValue,
     name: data.name,
     get type() {
-      return typeof atomType;
+      return atomType;
     },
     addItem(item) {
       this.update([...this.value, item]);
