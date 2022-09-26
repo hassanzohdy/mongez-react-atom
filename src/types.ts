@@ -3,18 +3,24 @@ import { EventSubscription } from "@mongez/events";
 export type AtomPartialChangeCallback = (
   newValue: any,
   oldValue: any,
-  atom: Atom
+  atom: Atom<any, any>
 ) => void;
 
 /**
  * Atom Options
  */
-export type AtomOptions = {
+export type AtomOptions<Value, Actions> = {
   /**
    * Atom unique name
+   *
+   * @deprecated use `key` instead
    */
-  // eslint-disable-next-line no-restricted-globals
-  name: string;
+  name?: string;
+  /**
+   * Atom unique key
+   *
+   */
+  key?: string;
   /**
    * Atom default value
    */
@@ -22,21 +28,38 @@ export type AtomOptions = {
   /**
    * Make adjustments on the value before updating the atom
    */
-  beforeUpdate?: (newValue: any) => any;
+  beforeUpdate?: (
+    newValue: any,
+    oldValue: any,
+    atom: Atom<Value, Actions>
+  ) => any;
   /**
    * Set getter function, works only when atom's value is object
    */
   get?: (key: string, defaultValue?: any, atomValue?: any) => any;
+  /**
+   * Atom actions
+   *
+   * Useful to work with atom's value and operate over it
+   */
+  actions?: Actions;
 };
 
 /**
  * The Atom Instance
  */
-export type Atom = {
+export type Atom<Value, Actions> = {
   /**
    * Atom unique name, set by the user
+   *
+   * @deprecated use `key` instead
    */
-  name: string;
+  name?: string;
+
+  /**
+   * Atom unique key, set by the user
+   */
+  key?: string;
 
   /**
    * Atom default value, set by the user
@@ -58,7 +81,9 @@ export type Atom = {
    * or it can accept a callback that passes the old value and the atom instance
    * This will trigger atom event update
    */
-  update: (value: ((oldValue: any, atom: Atom) => any) | any) => void;
+  update: (
+    value: ((oldValue: any, atom: Atom<Value, Actions>) => any) | any
+  ) => void;
 
   /**
    * Change only one key of the atom
@@ -87,13 +112,13 @@ export type Atom = {
    * The callback accepts the new updated value, the old value and an atom instance
    */
   onChange: (
-    callback: (newValue: any, oldValue: any, atom: Atom) => void
+    callback: (newValue: any, oldValue: any, atom: Atom<Value, Actions>) => void
   ) => EventSubscription;
 
   /**
    * An event listener to the atom destruction
    */
-  onDestroy(callback: (atom: Atom) => void): EventSubscription;
+  onDestroy(callback: (atom: Atom<Value, Actions>) => void): EventSubscription;
 
   /**
    * Watch for atom value change
@@ -125,7 +150,7 @@ export type Atom = {
   /**
    * An alias for useAtomWatch but specific for this atom
    */
-  useWatcher<T>(key: string): T;
+  useWatcher<T = never>(key: string): T;
 
   /**
    * Remove item by the given index or callback
@@ -170,7 +195,7 @@ export type Atom = {
    * Works only if atom's value is an array
    */
   getItemIndex: (
-    callback: (item: any, index: number, array: any[]) => any
+    callback: (item: any, index: number, array: any[]) => boolean
   ) => number;
 
   /**
@@ -200,4 +225,11 @@ export type Atom = {
    * Works only if atom's value is an array or a string
    */
   readonly length: number;
+
+  /**
+   * Atom actions
+   *
+   * Useful to work with atom's value and operate over it
+   */
+  actions: Actions;
 };

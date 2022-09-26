@@ -30,7 +30,7 @@ This will raise the power of single responsibility.
 import { atom, Atom } from "@mongez/react-atom";
 
 export const currencyAtom: Atom = atom({
-  name: "currency",
+  key: "currency",
   default: "EUR",
 });
 ```
@@ -189,7 +189,7 @@ The essential point here is any atom can be updated from any component, also any
 
 ## Atoms are unique
 
-Atoms are meant to be **unique** therefore the atom `name` can not be used in more than one atom, if other atom is being created with a previously defined atom, an error will be thrown that indicates to use another atom name.
+Atoms are meant to be **unique** therefore the atom `key` can not be used in more than one atom, if other atom is being created with a previously defined atom, an error will be thrown that indicates to use another atom key.
 
 ## Atom structure
 
@@ -209,9 +209,9 @@ export type AtomPartialChangeCallback = (
  */
 export type AtomProps = {
   /**
-   * Atom unique name
+   * Atom unique key
    */
-  name: string;
+  key: string;
   /**
    * Atom default value
    */
@@ -219,7 +219,7 @@ export type AtomProps = {
   /**
    * Make adjustments on the value before updating the atom
    */
-  beforeUpdate?: (newValue: any) => any;
+  beforeUpdate?: (newValue: any, oldValue: any, atom: Atom) => any;
 };
 
 /**
@@ -227,9 +227,9 @@ export type AtomProps = {
  */
 export type Atom = {
   /**
-   * Atom unique name, set by the user
+   * Atom unique key, set by the user
    */
-  name: string;
+  key: string;
 
   /**
    * Atom default value, set by the user
@@ -427,6 +427,65 @@ import { currencyAtom } from "~/src/atoms";
 currencyAtom.update("USD"); // any component using the atom will be rerendered automatically.
 ```
 
+We can also pass a callback to the update function, the callback will receive the old value and the atom instance.
+
+```ts
+// anywhere in your app
+import { currencyAtom } from "~/src/atoms";
+
+currencyAtom.update((oldValue, atom) => {
+  // do something with the old value
+  return "USD";
+});
+```
+
+## Atom Update Consistency
+
+> Enhanced in v1.5.0
+
+If the atom's new value is the same as the current value, the atom will not be updated and the component will not be rerendered, however, in arrays or objects to make sure the atom will trigger the update is to pass a new reference to the array or object.
+
+```ts
+// anywhere in your app
+
+import { atom } from '@mongez/react-atom';
+
+const languagesAtom = atom({
+  key: 'languages',
+   default: ['en', 'ar'],
+});
+
+languagesAtom.value.push('fr'); 
+
+languagesAtom.update(languagesAtom.value); // this will not trigger the update
+
+languagesAtom.update(['en', 'ar']); // this will trigger the update
+languagesAtom.update([...languagesAtom.value, 'fr']); // this will trigger the update
+```
+
+Same applies on objects
+
+```ts
+// anywhere in your app
+import { atom } from '@mongez/react-atom';
+
+const userAtom = atom({
+  key: 'user',
+   default: {
+    name: 'John',
+    age: 30,
+  },
+});
+
+const user = userAtom.value;
+
+user.name = 'John Doe';
+
+userAtom.update(user); // this will not trigger the update
+
+userAtom.update({...user}); // this will trigger the update
+```
+
 ## Change atom single key
 
 If you're going to change a single key in the atom's value object, we may use `atom.change` for this purpose.
@@ -435,16 +494,16 @@ If you're going to change a single key in the atom's value object, we may use `a
 import { atom } from "@mongez/atom-react";
 
 const userAtom = atom({
-  name: "user",
+  key: "user",
   default: {
-    name: "Hasan",
+    key: "Hasan",
     address: {
       city: "New York",
     },
   },
 });
 
-userAtom.change("name", "Ali");
+userAtom.change("key", "Ali");
 userAtom.change("address.city", "Cairo");
 ```
 
@@ -470,20 +529,20 @@ import { currencyAtom } from "~/src/atoms";
 currencyAtom.destroy();
 ```
 
-## Getting atom name
+## Getting atom key
 
-To get the atom name, use `atom.name` will return the atom name.
+To get the atom key, use `atom.key` will return the atom key.
 
 ```ts
 // anywhere in your app
 import { currencyAtom } from "~/src/atoms";
 
-console.log(currencyAtom.name); // currencyAtom
+console.log(currencyAtom.key); // currencyAtom
 ```
 
-## Getting atom by name
+## Getting atom by key
 
-If we want more dynamic way to get atoms, we can use `getAtom` utility to get the atom using its name.
+If we want more dynamic way to get atoms, we can use `getAtom` utility to get the atom using its key.
 
 ```ts
 // anywhere in your app
@@ -492,11 +551,11 @@ import { getAtom } from "~/src/atoms";
 const currencyAtomAtom = getAtom("currency");
 ```
 
-If there is no atom with that name, it will return a `null` value instead.
+If there is no atom with that key, it will return a `null` value instead.
 
-## Getting atom value by name
+## Getting atom value by key
 
-Another way to get an atom value directly using the atom name itself is by using `getAtomValue` utility.
+Another way to get an atom value directly using the atom key itself is by using `getAtomValue` utility.
 
 ```ts
 // anywhere in your app
@@ -524,16 +583,16 @@ If atom's value is an object, we can get a value from the atom directly using `a
 import { atom } from "@mongez/atom-react";
 
 const userAtom = atom({
-  name: "user",
+  key: "user",
   default: {
-    name: "Hasan",
+    key: "Hasan",
     address: {
       city: "New York",
     },
   },
 });
 
-console.log(userAtom.get("name")); // Hasan
+console.log(userAtom.get("key")); // Hasan
 ```
 
 Dot Notation is also supported.
@@ -556,7 +615,7 @@ Without Defining the `atom getter`
 
 ```ts
 const settingsAtom = atom({
-  name: "user",
+  key: "user",
   default: {
     isLoaded: false,
     settings: {},
@@ -580,7 +639,7 @@ After Defining it
 import { atom } from "@mongez/atom-react";
 
 const settingsAtom = atom({
-  name: "user",
+  key: "user",
   default: {
     isLoaded: false,
     settings: {},
@@ -643,23 +702,23 @@ Sometimes you may need to watch for only a key in the atom's value object, the `
 import { atom } from "@mongez/react-atom";
 
 const userAtom = atom({
-  name: "user",
+  key: "user",
   default: {
-    name: "Hasan",
+    key: "Hasan",
     address: {
       city: "New York",
     },
   },
 });
 
-userAtom.watch("name", (newName, oldName) => {
+userAtom.watch("key", (newName, oldName) => {
   console.log(newName, oldName); // 'Hasan', 'Ali'
 });
 
 // later in the app
 userAtom.update({
   ...userAtom.value,
-  name: "Ali",
+  key: "Ali",
 });
 ```
 
@@ -670,9 +729,9 @@ Dot notation is allowed too.
 import { atom } from "@mongez/react-atom";
 
 const userAtom = atom({
-  name: "user",
+  key: "user",
   default: {
-    name: "Hasan",
+    key: "Hasan",
     address: {
       city: "New York",
     },
@@ -769,11 +828,13 @@ Sometimes it's useful to mutate the value before updating it in the atom, this c
 
 This is very useful especially when dealing with objects/arrays and you want to make some operations before using the final value.
 
+`beforeUpdate(newValue: any, oldValue: any, atom: Atom)`
+
 ```ts
 import { atom, Atom } from "@mongez/react-atom";
 
 export const multipleAtom: Atom = atom({
-  name: "multiple",
+  key: "multiple",
   default: 0,
   beforeUpdate(newNumber: number): number {
     return newNumber * 2;
@@ -810,7 +871,7 @@ We can get the type of the atom's value using `atom.type` property.
 
 ```tsx
 const currencyAtom = atom({
-  name: "currency",
+  key: "currency",
   default: "USD",
 });
 
@@ -821,7 +882,7 @@ If the default value is an array it will be returned as array not object.
 
 ```tsx
 const todoListAtom = atom({
-  name: "todo",
+  key: "todo",
   default: [],
 });
 
@@ -855,7 +916,7 @@ This method will allow you adding item to the array, it will also trigger the ch
 
 ```tsx
 const todoListAtom = atom({
-  name: "todo",
+  key: "todo",
   default: [],
 });
 
@@ -890,7 +951,7 @@ To remove an item from the atom's array we can use the `removeItem` method.
 
 ```tsx
 const todoListAtom = atom({
-  name: "todo",
+  key: "todo",
   default: [],
 });
 
@@ -1013,7 +1074,7 @@ Walk over every item in the array and update it, this will trigger the change ev
 
 ```tsx
 const numbersAtom = atom({
-  name: "number",
+  key: "number",
   default: [1, 2, 3, 4],
 });
 
@@ -1031,7 +1092,7 @@ This can be useful feature when working with arrays or strings, `atom.length` re
 
 ```tsx
 const todoListAtom = atom({
-  name: "todo",
+  key: "todo",
   default: [],
 });
 
@@ -1045,8 +1106,35 @@ todoListAtom.addItem({
 console.log(todoListAtom.length); // 1
 ```
 
+## Atom Actions
+
+> Added in v1.5.0
+
+Sometimes we need to do actions over the atom's value, for example, we want to append a string to current atom value.
+
+```ts
+const textAtom = atom({
+  key: "text",
+  default: "Hello",
+  actions: {
+    append: (text: string) => {
+      textAtom.update((current) => current + text);
+    }
+  }
+});
+
+// now let's use it in anywhere in the app
+
+textAtom.actions.append(" World");
+```
+
 ## Change Log
 
+- V1.5.0 (25 Sept 2022)
+  - Added [Atom Actions](#atom-actions)
+  - Enhanced [Atom Update Consistency](#atom-update-consistency)
+- V1.4.1 (01 August 2022)
+  - `beforeUpdate` now receives the old value as second argument and the atom object as third argument.
 - V1.4.0 (31 July 2022)
   - Added [atom.addItem](#add-item) method: Add new item to the atom.
   - Added [atom.removeItem](#remove-item) method: Add new item to the atom.
