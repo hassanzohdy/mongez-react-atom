@@ -19,21 +19,21 @@ function debounce(callback: () => void, wait: number = 0) {
   }, wait);
 }
 
-const atoms: Atom<unknown, unknown>[] = [];
+const atoms: Atom<any, any>[] = [];
 
 /**
  * Get atom by name
  */
-export function getAtom(name: string): Atom<unknown, unknown> | null {
+export function getAtom(name: string): Atom<any, any> | null {
   return atoms.find((atom) => atom.key === name) || null;
 }
 
 /**
  * Get atom value either by sending the atom object or the its name only
  */
-export function getAtomValue(atom: string | Atom<unknown, unknown>): any {
+export function getAtomValue(atom: string | Atom<any, any>): any {
   if (typeof atom === "string") {
-    atom = getAtom(atom) as Atom<unknown, unknown>;
+    atom = getAtom(atom) as Atom<any, any>;
   }
 
   if (!atom) return;
@@ -45,13 +45,11 @@ export function getAtomValue(atom: string | Atom<unknown, unknown>): any {
  * Watch for atom key's change
  */
 export function useAtomWatch(
-  atom: Atom<unknown, unknown>,
+  atom: Atom<any, any>,
   key: string,
   callback: AtomPartialChangeCallback
 ) {
   useEffect(() => {
-    console.log(key);
-
     const event = atom.watch(key, callback);
 
     return () => event.unsubscribe();
@@ -61,7 +59,7 @@ export function useAtomWatch(
 /**
  * Listen for change for the given atom
  */
-export function useAtomWatcher<Value = unknown, Actions = unknown>(
+export function useAtomWatcher<Value = any, Actions = any>(
   atom: Atom<Value, Actions>,
   key: string
 ) {
@@ -225,7 +223,7 @@ function createAtom<Value, Actions>(
             const keyNewValue = Obj.get(newValue, key);
             if (keyOldValue !== keyNewValue) {
               watchers[key].forEach(
-                (callback: (newValue: unknown, oldValue: unknown) => void) =>
+                (callback: (newValue: any, oldValue: any) => void) =>
                   callback(keyNewValue, keyOldValue)
               );
             }
@@ -311,14 +309,14 @@ export function atom<Value, Actions>(
 /**
  * Get all atoms list
  */
-export function atomsList(): Atom<unknown, unknown>[] {
+export function atomsList(): Atom<any, any>[] {
   return atoms;
 }
 
 /**
  * Use the given atom and return the atom value and atom value state changer
  */
-export function useAtom(atom: Atom<unknown, unknown>, defaultValue?: any): any {
+export function useAtom(atom: Atom<any, any>, defaultValue?: any): any {
   const [value, setValue] = useState(atom.value);
 
   useEffect(() => {
@@ -348,14 +346,14 @@ export function useAtom(atom: Atom<unknown, unknown>, defaultValue?: any): any {
  * This will re-render the component once the atom's value is changed
  * @returns
  */
-export function useAtomValue<Value = unknown>(atom: Atom<Value, unknown>): any {
+export function useAtomValue<Value = any>(atom: Atom<Value, any>): any {
   return useAtom(atom)[0];
 }
 
 /**
  * Get the atom value state changer
  */
-export function useAtomState<Value = unknown, Actions = unknown>(
+export function useAtomState<Value = any, Actions = any>(
   atom: Atom<Value, Actions>,
   defaultValue?: any
 ): any {
