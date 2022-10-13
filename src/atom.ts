@@ -71,7 +71,7 @@ export function useAtomWatcher<Value = any, Actions = any>(
   return value;
 }
 
-function createAtom<Value, Actions>(
+function createAtom<Value = any, Actions = any>(
   data: AtomOptions<Value, Actions>
 ): Atom<Value, Actions> {
   let defaultValue = data.default;
