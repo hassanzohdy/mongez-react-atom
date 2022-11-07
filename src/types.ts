@@ -48,7 +48,7 @@ export type AtomOptions<Value, Actions> = {
 /**
  * The Atom Instance
  */
-export type Atom<Value, Actions> = {
+export type Atom<Value = any, Actions = any> = {
   /**
    * Atom unique name, set by the user
    *
