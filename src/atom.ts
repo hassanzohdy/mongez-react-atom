@@ -1,5 +1,5 @@
 import events, { EventSubscription } from "@mongez/events";
-import { Obj } from "@mongez/reinforcements";
+import { clone, get, set } from "@mongez/reinforcements";
 import { useEffect, useState } from "react";
 import { Atom, AtomOptions, AtomPartialChangeCallback } from "./types";
 
@@ -80,7 +80,7 @@ function createAtom<Value = any, Actions = any>(
   let atomValueIsObject = false;
 
   if (defaultValue && typeof defaultValue === "object") {
-    atomValue = defaultValue = Obj.clone(defaultValue);
+    atomValue = defaultValue = clone(defaultValue);
     atomValueIsObject = true;
   }
 
@@ -189,10 +189,10 @@ function createAtom<Value = any, Actions = any>(
     change(key: string, newValue: any) {
       changes[key] = newValue;
       debounce(() => {
-        const object = Obj.clone(this.currentValue);
+        const object = clone(this.currentValue);
 
         for (const key in changes) {
-          Obj.set(object, key, changes[key]);
+          set(object, key, changes[key]);
         }
 
         changes = {};
@@ -219,8 +219,8 @@ function createAtom<Value = any, Actions = any>(
 
         if (atomValueIsObject) {
           for (const key in watchers) {
-            const keyOldValue = Obj.get(oldValue, key);
-            const keyNewValue = Obj.get(newValue, key);
+            const keyOldValue = get(oldValue, key);
+            const keyNewValue = get(newValue, key);
             if (keyOldValue !== keyNewValue) {
               watchers[key].forEach(
                 (callback: (newValue: any, oldValue: any) => void) =>
@@ -245,7 +245,7 @@ function createAtom<Value = any, Actions = any>(
         return data.get(key, defaultValue, this.currentValue);
       }
 
-      const value = Obj.get(this.currentValue, key, defaultValue);
+      const value = get(this.currentValue, key, defaultValue);
 
       // if the value is bindable, then bind the current value to be used as `this`
       return value?.bind ? value.bind(this.currentValue) : value;
