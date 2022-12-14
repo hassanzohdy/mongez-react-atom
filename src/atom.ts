@@ -1,11 +1,16 @@
 import events, { EventSubscription } from "@mongez/events";
 import { clone, get, set } from "@mongez/reinforcements";
 import { useEffect, useState } from "react";
-import { Atom, AtomOptions, AtomPartialChangeCallback } from "./types";
+import {
+  Atom,
+  AtomOptions,
+  AtomPartialChangeCallback,
+  AtomValue,
+} from "./types";
 
 let timeoutId: NodeJS.Timeout | undefined = undefined;
 
-function debounce(callback: () => void, wait: number = 0) {
+function debounce(callback: () => void, wait = 0) {
   // Clear previous delayed action, if existent
   if (timeoutId !== undefined) {
     clearTimeout(timeoutId);
@@ -25,7 +30,7 @@ const atoms: Atom<any, any>[] = [];
  * Get atom by name
  */
 export function getAtom(name: string): Atom<any, any> | null {
-  return atoms.find((atom) => atom.key === name) || null;
+  return atoms.find(atom => atom.key === name) || null;
 }
 
 /**
@@ -47,7 +52,7 @@ export function getAtomValue(atom: string | Atom<any, any>): any {
 export function useAtomWatch(
   atom: Atom<any, any>,
   key: string,
-  callback: AtomPartialChangeCallback
+  callback: AtomPartialChangeCallback,
 ) {
   useEffect(() => {
     const event = atom.watch(key, callback);
@@ -59,9 +64,9 @@ export function useAtomWatch(
 /**
  * Listen for change for the given atom
  */
-export function useAtomWatcher<Value = any, Actions = any>(
+export function useAtomWatcher<Value extends Record<string, any>, Actions>(
   atom: Atom<Value, Actions>,
-  key: string
+  key: string,
 ) {
   const value: Value = atom.get(key);
   const [, setValue] = useState<Value>(value);
@@ -71,9 +76,9 @@ export function useAtomWatcher<Value = any, Actions = any>(
   return value;
 }
 
-function createAtom<Value = any, Actions = any>(
-  data: AtomOptions<Value, Actions>
-): Atom<Value, Actions> {
+function createAtom<Value extends Record<string, any> = any, Actions = any>(
+  data: AtomOptions<AtomValue<Value>, Actions>,
+) {
   let defaultValue = data.default;
   let atomValue = data.default;
 
@@ -86,7 +91,7 @@ function createAtom<Value = any, Actions = any>(
 
   const atomType = Array.isArray(defaultValue) ? "array" : typeof defaultValue;
 
-  const atomEvent: string = `atoms.${data.key}`;
+  const atomEvent = `atoms.${data.key}`;
 
   const event = (type: string): string => `${atomEvent}.${type}`;
 
@@ -122,11 +127,11 @@ function createAtom<Value = any, Actions = any>(
       this.update(
         typeof indexesOrCallback === "function"
           ? this.value.filter(
-              indexesOrCallback as (item: any, index: number) => boolean
+              indexesOrCallback as (item: any, index: number) => boolean,
             )
           : this.value.filter(
-              (_, i) => !(indexesOrCallback as number[]).includes(i)
-            )
+              (_, i) => !(indexesOrCallback as number[]).includes(i),
+            ),
       );
     },
     getItem(indexOrCallback) {
@@ -140,7 +145,7 @@ function createAtom<Value = any, Actions = any>(
       return this.value[index];
     },
     getItemIndex(
-      callback: (item: any, index: number, array: any[]) => boolean
+      callback: (item: any, index: number, array: any[]) => boolean,
     ) {
       return this.value.findIndex(callback);
     },
@@ -160,11 +165,22 @@ function createAtom<Value = any, Actions = any>(
     useWatch(key: string, callback: AtomPartialChangeCallback) {
       return useAtomWatch(this, key, callback);
     },
-    useValue(defaultValue?: any) {
+    use<T extends keyof Value>(
+      key?: keyof Value,
+    ): T extends keyof Value ? Value[T] : Value {
+      if (!key) {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        return this.useValue() as any;
+      } else {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        return this.useWatcher(key as string) as any;
+      }
+    },
+    useValue(defaultValue?: any): Value {
       return useAtom(this, defaultValue || this.value)[0];
     },
-    useWatcher<T = never>(key: string): T {
-      return useAtomWatcher<T>(this, key);
+    useWatcher<T extends keyof Value>(key: T) {
+      return useAtomWatcher(this, key as string) as Value[T];
     },
     watch(key: string, callback: AtomPartialChangeCallback): EventSubscription {
       if (!watchers[key]) {
@@ -210,21 +226,21 @@ function createAtom<Value = any, Actions = any>(
       }
 
       if (data.beforeUpdate) {
-        newValue = data.beforeUpdate(newValue, oldValue, this);
+        newValue = data.beforeUpdate(newValue, oldValue, this as any);
       }
 
       this.currentValue = newValue;
       debounce(() => {
         events.trigger(event("update"), this.currentValue, oldValue, this);
-
         if (atomValueIsObject) {
           for (const key in watchers) {
             const keyOldValue = get(oldValue, key);
             const keyNewValue = get(newValue, key);
+
             if (keyOldValue !== keyNewValue) {
               watchers[key].forEach(
                 (callback: (newValue: any, oldValue: any) => void) =>
-                  callback(keyNewValue, keyOldValue)
+                  callback(keyNewValue, keyOldValue),
               );
             }
           }
@@ -235,8 +251,8 @@ function createAtom<Value = any, Actions = any>(
       callback: (
         newValue: any,
         oldValue: any,
-        atom: Atom<Value, Actions>
-      ) => void
+        atom: Atom<Value, Actions>,
+      ) => void,
     ): EventSubscription {
       return events.subscribe(event("update"), callback);
     },
@@ -254,15 +270,13 @@ function createAtom<Value = any, Actions = any>(
       events.trigger(event("delete"), this);
 
       events.unsubscribeNamespace(atomEvent);
-      const atomIndex: number = atoms.findIndex(
-        (atom) => atom.key === this.key
-      );
+      const atomIndex: number = atoms.findIndex(atom => atom.key === this.key);
       if (atomIndex !== -1) {
         atoms.splice(atomIndex, 1);
       }
     },
     onDestroy(
-      callback: (atom: Atom<Value, Actions>) => void
+      callback: (atom: Atom<Value, Actions>) => void,
     ): EventSubscription {
       return events.subscribe(`atoms.${this.key}.delete`, callback);
     },
@@ -274,8 +288,12 @@ function createAtom<Value = any, Actions = any>(
 
   if (data.actions) {
     Object.keys(data.actions).forEach((actionKey: string) => {
-      atomActions[actionKey] = data.actions![actionKey].bind(atom);
+      atomActions[actionKey] = data.actions?.[actionKey].bind(atom);
     });
+  }
+
+  if (data.onUpdate) {
+    events.subscribe(event("update"), data.onUpdate.bind(atom));
   }
 
   return atom;
@@ -284,22 +302,22 @@ function createAtom<Value = any, Actions = any>(
 /**
  * Create a new atom
  */
-export function atom<Value, Actions>(
-  data: AtomOptions<Value, Actions>
-): Atom<Value, Actions> {
+export function atom<Value = any, Actions = any>(
+  data: AtomOptions<AtomValue<Value>, Actions>,
+): Atom<AtomValue<Value>, Actions> {
   if (getAtom((data.key || data.name) as string)) {
     throw new Error(
-      `An atom is already defined with that name ${data.key}, please use another name for this atom.`
+      `An atom is already defined with that name ${data.key}, please use another name for this atom.`,
     );
   }
 
   if (process.env.NODE_ENV === "development" && data.name) {
     console.error(
-      `Atom "${data.name}" is using the deprecated "name" property, please use "key" instead. this will be removed in the next major version.`
+      `Atom "${data.name}" is using the deprecated "name" property, please use "key" instead. this will be removed in the next major version.`,
     );
   }
 
-  const atom: Atom<Value, Actions> = createAtom<Value, Actions>(data);
+  const atom = createAtom<AtomValue<Value>, Actions>(data as any);
 
   atoms.push(atom);
 
@@ -327,6 +345,7 @@ export function useAtom(atom: Atom<any, any>, defaultValue?: any): any {
     }
 
     return () => event.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [atom]);
 
   return [
@@ -346,7 +365,9 @@ export function useAtom(atom: Atom<any, any>, defaultValue?: any): any {
  * This will re-render the component once the atom's value is changed
  * @returns
  */
-export function useAtomValue<Value = any>(atom: Atom<Value, any>): any {
+export function useAtomValue<Value = any>(
+  atom: Atom<AtomValue<Value>, any>,
+): any {
   return useAtom(atom)[0];
 }
 
@@ -354,8 +375,8 @@ export function useAtomValue<Value = any>(atom: Atom<Value, any>): any {
  * Get the atom value state changer
  */
 export function useAtomState<Value = any, Actions = any>(
-  atom: Atom<Value, Actions>,
-  defaultValue?: any
+  atom: Atom<AtomValue<Value>, Actions>,
+  defaultValue?: any,
 ): any {
   return useAtom(atom, defaultValue)[1];
 }

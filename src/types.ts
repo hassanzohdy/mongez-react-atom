@@ -3,8 +3,12 @@ import { EventSubscription } from "@mongez/events";
 export type AtomPartialChangeCallback = (
   newValue: any,
   oldValue: any,
-  atom: Atom<any, any>
+  atom: Atom<any, any>,
 ) => void;
+
+export type AtomValue<Value> = Value extends Record<string, any>
+  ? Value
+  : Record<string, any>;
 
 /**
  * Atom Options
@@ -31,8 +35,12 @@ export type AtomOptions<Value, Actions> = {
   beforeUpdate?: (
     newValue: any,
     oldValue: any,
-    atom: Atom<Value, Actions>
+    atom: Atom<AtomValue<Value>, Actions>,
   ) => any;
+  /**
+   * Triggered when atom is updated
+   */
+  onUpdate?: (callback: AtomChangeCallback) => EventSubscription;
   /**
    * Set getter function, works only when atom's value is object
    */
@@ -45,10 +53,27 @@ export type AtomOptions<Value, Actions> = {
   actions?: Actions;
 };
 
+export type AtomChangeCallback = (
+  newValue: any,
+  oldValue: any,
+  atom: Atom<any, any>,
+) => void;
+
 /**
  * The Atom Instance
  */
-export type Atom<Value = any, Actions = any> = {
+// Generic Type Value can be any type or object with
+export type Atom<Value extends Record<string, any> = any, Actions = any> = {
+  /**
+   * An alias for useAtomWatch but specific for this atom
+   */
+  useWatcher<T extends keyof Value>(key: T): Value[T];
+
+  /**
+   * Return the value of atom or just key of it
+   */
+  use<T extends keyof Value>(key?: T): T extends keyof Value ? Value[T] : Value;
+
   /**
    * Atom unique name, set by the user
    *
@@ -82,7 +107,7 @@ export type Atom<Value = any, Actions = any> = {
    * This will trigger atom event update
    */
   update: (
-    value: ((oldValue: any, atom: Atom<Value, Actions>) => any) | any
+    value: ((oldValue: any, atom: Atom<Value, Actions>) => any) | any,
   ) => void;
 
   /**
@@ -111,9 +136,7 @@ export type Atom<Value = any, Actions = any> = {
    * An event listener to the atom value change
    * The callback accepts the new updated value, the old value and an atom instance
    */
-  onChange: (
-    callback: (newValue: any, oldValue: any, atom: Atom<Value, Actions>) => void
-  ) => EventSubscription;
+  onChange: (callback: AtomChangeCallback) => EventSubscription;
 
   /**
    * An event listener to the atom destruction
@@ -127,7 +150,7 @@ export type Atom<Value = any, Actions = any> = {
    */
   watch: (
     key: string,
-    callback: AtomPartialChangeCallback
+    callback: AtomPartialChangeCallback,
   ) => EventSubscription;
 
   /**
@@ -140,17 +163,12 @@ export type Atom<Value = any, Actions = any> = {
    * Watch for atom's value change and return it
    * When the atom's value is changed, the component will be rerendered again.
    */
-  useValue: () => any;
+  useValue: () => Value;
 
   /**
    * An alias for useAtomWatch but specific for this atom
    */
   useWatch: (key: string, callback: AtomPartialChangeCallback) => void;
-
-  /**
-   * An alias for useAtomWatch but specific for this atom
-   */
-  useWatcher<T = never>(key: string): T;
 
   /**
    * Remove item by the given index or callback
@@ -159,7 +177,7 @@ export type Atom<Value = any, Actions = any> = {
    * This will trigger the atom event change
    */
   removeItem: (
-    indexOrCallback: number | ((item: any, itemIndex: number) => boolean)
+    indexOrCallback: number | ((item: any, itemIndex: number) => boolean),
   ) => void;
 
   /**
@@ -169,7 +187,7 @@ export type Atom<Value = any, Actions = any> = {
    * This will trigger the atom event change
    */
   removeItems: (
-    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean)
+    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean),
   ) => void;
 
   /**
@@ -186,7 +204,7 @@ export type Atom<Value = any, Actions = any> = {
    * Works only if atom's value is an array
    */
   getItem: (
-    indexOrCallback: number | ((item: any, index: number) => any)
+    indexOrCallback: number | ((item: any, index: number) => any),
   ) => any;
 
   /**
@@ -195,7 +213,7 @@ export type Atom<Value = any, Actions = any> = {
    * Works only if atom's value is an array
    */
   getItemIndex: (
-    callback: (item: any, index: number, array: any[]) => boolean
+    callback: (item: any, index: number, array: any[]) => boolean,
   ) => number;
 
   /**

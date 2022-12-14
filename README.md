@@ -1128,8 +1128,103 @@ const textAtom = atom({
 textAtom.actions.append(" World");
 ```
 
+## Use
+
+> Added in v1.6.0
+
+Using `atom.use` will merge both `useValue` and `useWatcher` methods into one.
+
+If the `use` received a parameter, then it will be watching for the given property change, otherwise it will watch for the entire atom's value change.
+
+```tsx
+type User = {
+  name: string;
+  age: number;
+  position: 'developer' | 'designer' | 'manager';
+  notifications: number;
+};
+
+const userAtom = atom<User>({
+  key: "user",
+  default: {
+    name: 'Hasan',
+    age: 25,
+    position: 'developer'
+  },
+});
+
+// now in any component
+import userAtom from './userAtom';
+export function Header() {
+  const notifications = userAtom.use('notifications');
+
+  return (
+    <header>
+      {notifications}
+    </header>
+  )
+}
+```
+
+This will only re-render the component when the `notifications` property changes.
+
+Using `use` without any parameter will watch for the entire atom's value change.
+
+```tsx
+type User = {
+  name: string;
+  age: number;
+  position: 'developer' | 'designer' | 'manager';
+  notifications: number;
+};
+
+// now in any component
+import userAtom from './userAtom';
+
+export function Header() {
+  const user = userAtom.use();
+
+  return (
+    <header>
+      {user.notifications}
+    </header>
+  )
+}
+```
+
+This will be rerendered when the entire atom's value changes.
+
+> Please do remember that `atom.update` must receive a new reference of the value, otherwise it will not trigger the change event, for example `atom.update({ ...user })` will trigger the change event.
+
+From `V1.6.0` types are enhanced, when you pass the `type` to the atom, then the `use` method will return the same type, also it will allow only properties that are defined in the type.
+
+```tsx
+type User = {
+  name: string;
+  age: number;
+  position: 'developer' | 'designer' | 'manager';
+  notifications: number;
+};
+
+// now in any component
+import userAtom from './userAtom';
+
+export function Header() {
+  const notifications = userAtom.use('notifications'); // will return number, and Typescript will complain if you try to use other properties
+
+  return (
+    <header>
+      {notifications}
+    </header>
+  )
+}
+```
+
 ## Change Log
 
+- V1.6.0 (14 Dec 2022)
+  - Added [use](#use) method: Use atom's value or single value in a callback function.
+  - Enhanced types for objects.
 - V1.5.0 (25 Sept 2022)
   - Added [Atom Actions](#atom-actions)
   - Enhanced [Atom Update Consistency](#atom-update-consistency)
