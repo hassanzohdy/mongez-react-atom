@@ -928,8 +928,6 @@ console.log(todoListAtom.length); // 1
   - Removed atom update debounce.
   - Added `useState` hook to atom.
   - Enhanced `atom typings`.
-  - Deprecated `atom.useValue` method, use `atom.use` instead.
-  - Deprecated `atom.useWatcher` method, use `atom.use` instead.
 - V1.6.0 (14 Dec 2022)
   - Added [use](#use) method: Use atom's value or single value in a callback function.
   - Enhanced types for objects.
