@@ -28,13 +28,13 @@ export type AtomOptions<Value, Actions> = {
   /**
    * Atom default value
    */
-  default: any;
+  default: Value;
   /**
    * Make adjustments on the value before updating the atom
    */
   beforeUpdate?: (
-    newValue: any,
-    oldValue: any,
+    newValue: Value,
+    oldValue: Value,
     atom: Atom<AtomValue<Value>, Actions>,
   ) => any;
   /**
@@ -114,17 +114,17 @@ export type Atom<Value extends Record<string, any> = any, Actions = any> = {
    * Change only one key of the atom
    * Works only if atom's value is an object
    */
-  change: (key: string, newValue: any) => void;
+  change: <T extends keyof Value>(key: T, newValue: any) => void;
 
   /**
    * Get current value
    */
-  readonly value: any;
+  readonly value: Value;
 
   /**
    * Get default value that started with atom creation
    */
-  readonly defaultValue: any;
+  readonly defaultValue: Value;
 
   /**
    * Destroy the atom and remove it from atmos list
@@ -148,8 +148,8 @@ export type Atom<Value extends Record<string, any> = any, Actions = any> = {
    * This can be used only when atom's default value is an object or an array
    * The key accepts dot.notation syntax
    */
-  watch: (
-    key: string,
+  watch: <T extends keyof Value>(
+    key: T,
     callback: AtomPartialChangeCallback,
   ) => EventSubscription;
 
@@ -157,7 +157,7 @@ export type Atom<Value extends Record<string, any> = any, Actions = any> = {
    * Get value from atom's value
    * Works only if atom's value is an object
    */
-  get(key: string, defaultValue?: any): any;
+  get<T extends keyof Value>(key: T, defaultValue?: any): any;
 
   /**
    * Watch for atom's value change and return it
@@ -168,7 +168,10 @@ export type Atom<Value extends Record<string, any> = any, Actions = any> = {
   /**
    * An alias for useAtomWatch but specific for this atom
    */
-  useWatch: (key: string, callback: AtomPartialChangeCallback) => void;
+  useWatch: <T extends keyof Value>(
+    key: T,
+    callback: AtomPartialChangeCallback,
+  ) => void;
 
   /**
    * Remove item by the given index or callback

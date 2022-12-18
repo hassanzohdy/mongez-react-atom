@@ -95,9 +95,9 @@ function createAtom<Value extends Record<string, any> = any, Actions = any>(
 
   const event = (type: string): string => `${atomEvent}.${type}`;
 
-  let changes = {};
+  let changes: any = {};
 
-  const watchers = {};
+  const watchers: any = {};
 
   const atomKey = data.key || data.name;
 
@@ -111,7 +111,7 @@ function createAtom<Value extends Record<string, any> = any, Actions = any>(
       return atomType;
     },
     addItem(item) {
-      this.update([...this.value, item]);
+      this.update([...this.currentValue, item]);
     },
     removeItem(indexOrCallback) {
       const index =
@@ -162,8 +162,11 @@ function createAtom<Value extends Record<string, any> = any, Actions = any>(
         ...this.value.slice(index + 1),
       ]);
     },
-    useWatch(key: string, callback: AtomPartialChangeCallback) {
-      return useAtomWatch(this, key, callback);
+    useWatch<T extends keyof Value>(
+      key: T,
+      callback: AtomPartialChangeCallback,
+    ) {
+      return useAtomWatch(this, key as any, callback);
     },
     use<T extends keyof Value>(
       key?: keyof Value,
@@ -182,7 +185,10 @@ function createAtom<Value extends Record<string, any> = any, Actions = any>(
     useWatcher<T extends keyof Value>(key: T) {
       return useAtomWatcher(this, key as string) as Value[T];
     },
-    watch(key: string, callback: AtomPartialChangeCallback): EventSubscription {
+    watch<T extends keyof Value>(
+      key: T,
+      callback: AtomPartialChangeCallback,
+    ): EventSubscription {
       if (!watchers[key]) {
         watchers[key] = [];
       }
@@ -202,7 +208,7 @@ function createAtom<Value extends Record<string, any> = any, Actions = any>(
     get value(): Value {
       return this.currentValue;
     },
-    change(key: string, newValue: any) {
+    change<T extends keyof Value>(key: T, newValue: any) {
       changes[key] = newValue;
       debounce(() => {
         const object = clone(this.currentValue);
@@ -256,12 +262,12 @@ function createAtom<Value extends Record<string, any> = any, Actions = any>(
     ): EventSubscription {
       return events.subscribe(event("update"), callback);
     },
-    get(key: string, defaultValue: any = null): any {
+    get<T extends keyof Value>(key: T, defaultValue: any = null): any {
       if (data.get) {
-        return data.get(key, defaultValue, this.currentValue);
+        return data.get(key as string, defaultValue, this.currentValue);
       }
 
-      const value = get(this.currentValue, key, defaultValue);
+      const value = get(this.currentValue, key as string, defaultValue);
 
       // if the value is bindable, then bind the current value to be used as `this`
       return value?.bind ? value.bind(this.currentValue) : value;
