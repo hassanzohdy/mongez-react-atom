@@ -3,7 +3,7 @@ import { EventSubscription } from "@mongez/events";
 export type AtomPartialChangeCallback = (
   newValue: any,
   oldValue: any,
-  atom: Atom<any, any>,
+  atom: Atom<any>
 ) => void;
 
 export type AtomValue<Value> = Value extends Record<string, any>
@@ -13,18 +13,11 @@ export type AtomValue<Value> = Value extends Record<string, any>
 /**
  * Atom Options
  */
-export type AtomOptions<Value, Actions> = {
-  /**
-   * Atom unique name
-   *
-   * @deprecated use `key` instead
-   */
-  name?: string;
+export type AtomOptions<Value> = {
   /**
    * Atom unique key
-   *
    */
-  key?: string;
+  key: string;
   /**
    * Atom default value
    */
@@ -35,7 +28,7 @@ export type AtomOptions<Value, Actions> = {
   beforeUpdate?: (
     newValue: Value,
     oldValue: Value,
-    atom: Atom<AtomValue<Value>, Actions>,
+    atom: Atom<AtomValue<Value>>
   ) => any;
   /**
    * Triggered when atom is updated
@@ -45,42 +38,19 @@ export type AtomOptions<Value, Actions> = {
    * Set getter function, works only when atom's value is object
    */
   get?: (key: string, defaultValue?: any, atomValue?: any) => any;
-  /**
-   * Atom actions
-   *
-   * Useful to work with atom's value and operate over it
-   */
-  actions?: Actions;
 };
 
 export type AtomChangeCallback = (
   newValue: any,
   oldValue: any,
-  atom: Atom<any, any>,
+  atom: Atom<any>
 ) => void;
 
 /**
  * The Atom Instance
  */
 // Generic Type Value can be any type or object with
-export type Atom<Value extends Record<string, any> = any, Actions = any> = {
-  /**
-   * An alias for useAtomWatch but specific for this atom
-   */
-  useWatcher<T extends keyof Value>(key: T): Value[T];
-
-  /**
-   * Return the value of atom or just key of it
-   */
-  use<T extends keyof Value>(key?: T): T extends keyof Value ? Value[T] : Value;
-
-  /**
-   * Atom unique name, set by the user
-   *
-   * @deprecated use `key` instead
-   */
-  name?: string;
-
+export type Atom<Value extends Record<string, any> = any> = {
   /**
    * Atom unique key, set by the user
    */
@@ -106,9 +76,7 @@ export type Atom<Value extends Record<string, any> = any, Actions = any> = {
    * or it can accept a callback that passes the old value and the atom instance
    * This will trigger atom event update
    */
-  update: (
-    value: ((oldValue: any, atom: Atom<Value, Actions>) => any) | any,
-  ) => void;
+  update: (value: ((oldValue: any, atom: Atom<Value>) => any) | any) => void;
 
   /**
    * Change only one key of the atom
@@ -141,7 +109,7 @@ export type Atom<Value extends Record<string, any> = any, Actions = any> = {
   /**
    * An event listener to the atom destruction
    */
-  onDestroy(callback: (atom: Atom<Value, Actions>) => void): EventSubscription;
+  onDestroy(callback: (atom: Atom<Value>) => void): EventSubscription;
 
   /**
    * Watch for atom value change
@@ -150,14 +118,19 @@ export type Atom<Value extends Record<string, any> = any, Actions = any> = {
    */
   watch: <T extends keyof Value>(
     key: T,
-    callback: AtomPartialChangeCallback,
+    callback: AtomPartialChangeCallback
   ) => EventSubscription;
 
   /**
    * Get value from atom's value
    * Works only if atom's value is an object
    */
-  get<T extends keyof Value>(key: T, defaultValue?: any): any;
+  get<T extends keyof Value>(key: T, defaultValue?: any): Value[T];
+
+  /**
+   * Return the value of atom or just key of it
+   */
+  use<T extends keyof Value>(key?: T): T extends keyof Value ? Value[T] : Value;
 
   /**
    * Watch for atom's value change and return it
@@ -168,9 +141,23 @@ export type Atom<Value extends Record<string, any> = any, Actions = any> = {
   /**
    * An alias for useAtomWatch but specific for this atom
    */
+  useWatcher<T extends keyof Value>(key: T): Value[T];
+
+  /**
+   * Use state for atom value
+   *
+   * This will return an array with the first item is the atom's value
+   * and the second item is a function to update the atom's value
+   * As it will cause a re-render once the atoms'value is updated
+   */
+  useState: () => [Value, (value: Value) => void];
+
+  /**
+   * An alias for useAtomWatch but specific for this atom
+   */
   useWatch: <T extends keyof Value>(
     key: T,
-    callback: AtomPartialChangeCallback,
+    callback: AtomPartialChangeCallback
   ) => void;
 
   /**
@@ -180,7 +167,7 @@ export type Atom<Value extends Record<string, any> = any, Actions = any> = {
    * This will trigger the atom event change
    */
   removeItem: (
-    indexOrCallback: number | ((item: any, itemIndex: number) => boolean),
+    indexOrCallback: number | ((item: any, itemIndex: number) => boolean)
   ) => void;
 
   /**
@@ -190,7 +177,7 @@ export type Atom<Value extends Record<string, any> = any, Actions = any> = {
    * This will trigger the atom event change
    */
   removeItems: (
-    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean),
+    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean)
   ) => void;
 
   /**
@@ -207,7 +194,7 @@ export type Atom<Value extends Record<string, any> = any, Actions = any> = {
    * Works only if atom's value is an array
    */
   getItem: (
-    indexOrCallback: number | ((item: any, index: number) => any),
+    indexOrCallback: number | ((item: any, index: number) => any)
   ) => any;
 
   /**
@@ -216,7 +203,7 @@ export type Atom<Value extends Record<string, any> = any, Actions = any> = {
    * Works only if atom's value is an array
    */
   getItemIndex: (
-    callback: (item: any, index: number, array: any[]) => boolean,
+    callback: (item: any, index: number, array: any[]) => boolean
   ) => number;
 
   /**
@@ -246,11 +233,4 @@ export type Atom<Value extends Record<string, any> = any, Actions = any> = {
    * Works only if atom's value is an array or a string
    */
   readonly length: number;
-
-  /**
-   * Atom actions
-   *
-   * Useful to work with atom's value and operate over it
-   */
-  actions: Actions;
 };

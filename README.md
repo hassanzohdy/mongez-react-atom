@@ -1,14 +1,24 @@
 # Mongez React Atom
 
-A simple state management tool for React Js.
+A powerful state management tool for React Js.
 
 ## Why?
 
-The main purpose of the birth of this package is to work with a simple and performant state management tool to handle data among components.
+The main purpose of the birth of this package is to work with a simple and performant state management tool to handle data among components and outside components.
 
 ## This can be a replacement for Redux
 
 Redux is a powerful state management tool, the purpose of this package is to use a simple state management which provides a good performance with large applications.
+
+## Features
+
+- Simple and easy to use
+- Can be used in any React Js/React Native application.
+- Can be used outside components.
+- Listen to atom's value change.
+- Listen to atom's object property change.
+- Lightweight in size.
+- Has very good utilities to manage atom if it is array or object.
 
 ## Installation
 
@@ -18,7 +28,15 @@ Or
 
 `npm i @mongez/react-atom`
 
-## Usage
+## Atoms are unique
+
+Atoms are meant to be **unique** therefore the atom `key` can not be used in more than one atom, if other atom is being created with a previously defined atom, an error will be thrown that indicates to use another atom key.
+
+## Using Atoms outside components
+
+Atoms can be accessed outside components, this is useful when you want to use the atom's value in a function or a class, or even in a service.
+
+By embracing the idea using atoms outside components, we can easily manage the data in a single place, this can help you update or fetch the current atom's value while you're not using it inside a component.
 
 ## Creating New Atom
 
@@ -29,27 +47,28 @@ This will raise the power of single responsibility.
 ```ts
 import { atom, Atom } from "@mongez/react-atom";
 
-export const currencyAtom: Atom = atom({
+export const currencyAtom: Atom<string> = atom({
   key: "currency",
   default: "EUR",
 });
 ```
 
-> Please note that all atoms are immutables, the default data will be kept untouched if it is objects or arrays.
+> Please note that all atoms are immutables, the default data will be kept untouched if it is an object or an array.
 
-## Using Atoms In Components
+When creating a new atom, it's recommended to pass the atom's value type as a generic type to the `atom` function, this will help you use the atom's value in a type-safe way.
 
-Now the `currencyAtom` is now an atom, has only single value, from this point we can use it in anywhere in our application components or event outside components.
+## Using Atoms in components
+
+Now the `currencyAtom` atom has only single value, from this point we can use it in anywhere in our application components or event outside components.
 
 `Header.tsx`
 
 ```tsx
 import React from "react";
-import { useAtom } from "@mongez/react-atom";
 import { currencyAtom } from "~/src/atoms";
 
 export default function Header() {
-  const [currency, setCurrency] = useAtom(currencyAtom);
+  const currency = currencyAtom.use();
 
   return (
     <>
@@ -68,7 +87,7 @@ import { useAtom } from "@mongez/react-atom";
 import { currencyAtom } from "~/src/atoms";
 
 export default function Footer() {
-  const [currency] = useAtom(currencyAtom);
+  const currency = currencyAtom.use();
 
   return (
     <>
@@ -93,7 +112,7 @@ import { useAtom } from "@mongez/react-atom";
 import { currencyAtom } from "~/src/atoms";
 
 export default function Header() {
-  const [currency, setCurrency] = useAtom(currencyAtom);
+  const [currency, setCurrency] = currencyAtom.useState();
 
   return (
     <>
@@ -109,298 +128,17 @@ export default function Header() {
 
 Once we click on any button of the three buttons, the currency will be changed in our atom, the good thing here is it will be changed in the `Footer` component as well.
 
-## Getting Atom Values Only
+## Types of atom values
 
-A shorthand way if we want only the atom value instead of the atom and the state updater is to use `useAtomValue` hook.
+Any atom must have a `default` value when initializing it, this value can be any type, it can be a string, number, boolean, object, array, however, when the default value is an `object` or an `array`, the atom gets a **special treatment**.
 
-`Footer.tsx`
+We will see this later in the documentation.
 
-```tsx
-import React from "react";
-import { useAtomValue } from "@mongez/react-atom";
-import { currencyAtom } from "~/src/atoms";
+## Get atom value
 
-export default function Footer() {
-  const currency = useAtomValue(currencyAtom);
+Atom's value can be fetched in different ways, depends what are you trying to do.
 
-  return (
-    <>
-      <h1>Footer</h1>
-      You're using our application in {currency} Currency.
-    </>
-  );
-}
-```
-
-## Atom useValue
-
-> Added in v1.3.0
-
-Alternatively, you can get the same exact effect of `useAtomValue` by using `atom.useValue` directly from the atom itself to watch for the atom's value change.
-
-This will of course cause a component rerender event.
-
-`Footer.tsx`
-
-```tsx
-import React from "react";
-import { currencyAtom } from "~/src/atoms";
-
-export default function Footer() {
-  const currency = currencyAtom.useValue();
-
-  return (
-    <>
-      <h1>Footer</h1>
-      You're using our application in {currency} Currency.
-    </>
-  );
-}
-```
-
-## Getting Atom State Value Updater Only
-
-This can be also done with the atom value updater by using `useAtomState`
-
-`Header.tsx`
-
-```tsx
-import React from "react";
-import { useAtomState } from "@mongez/react-atom";
-import { currencyAtom } from "~/src/atoms";
-
-export default function Header() {
-  const setCurrency = useAtomState(currencyAtom);
-
-  return (
-    <>
-      <h1>Header</h1>
-      <button onClick={(e) => setCurrency("EUR")}>EUR</button>
-      <button onClick={(e) => setCurrency("USD")}>USD</button>
-      <button onClick={(e) => setCurrency("EGP")}>EGP</button>
-    </>
-  );
-}
-```
-
-## The Traveling Atom
-
-The essential point here is any atom can be updated from any component, also any component can listen to the atom's value change by using `useAtom`, `useAtomValue` or `useAtomWatcher`, thus you don't need to use any Context to pass the data between components.
-
-## Atoms are unique
-
-Atoms are meant to be **unique** therefore the atom `key` can not be used in more than one atom, if other atom is being created with a previously defined atom, an error will be thrown that indicates to use another atom key.
-
-## Atom structure
-
-Each new atom returns an atom instance, here is the atom object properties that is generated from `atom()` function.
-
-```ts
-import { EventSubscription } from "@mongez/events";
-
-export type AtomPartialChangeCallback = (
-  newValue: any,
-  oldValue: any,
-  atom: Atom
-) => void;
-
-/**
- * Default props
- */
-export type AtomProps = {
-  /**
-   * Atom unique key
-   */
-  key: string;
-  /**
-   * Atom default value
-   */
-  default: any;
-  /**
-   * Make adjustments on the value before updating the atom
-   */
-  beforeUpdate?: (newValue: any, oldValue: any, atom: Atom) => any;
-};
-
-/**
- * The Atom Instance
- */
-export type Atom = {
-  /**
-   * Atom unique key, set by the user
-   */
-  key: string;
-
-  /**
-   * Atom default value, set by the user
-   */
-  default: any;
-
-  /**
-   * Atom current value, initialized with the passed default value
-   */
-  currentValue: any;
-
-  /**
-   * Reset the atom value
-   */
-  reset: () => void;
-
-  /**
-   * Update atom value, the function accepts a new value,
-   * or it can accept a callback that passes the old value and the atom instance
-   * This will trigger atom event update
-   */
-  update: (value: ((oldValue: any, atom: Atom) => any) | any) => void;
-
-  /**
-   * Change only one key of the atom
-   * Works only if atom's value is an object
-   */
-  change: (key: string, newValue: any) => void;
-
-  /**
-   * Get current value
-   */
-  readonly value: any;
-
-  /**
-   * Get default value that started with atom creation
-   */
-  readonly defaultValue: any;
-
-  /**
-   * Destroy the atom and remove it from atmos list
-   * This will trigger an atom destroy event then unsubscribe all atom events
-   */
-  destroy: () => void;
-
-  /**
-   * An event listener to the atom value change
-   * The callback accepts the new updated value, the old value and an atom instance
-   */
-  onChange: (
-    callback: (newValue: any, oldValue: any, atom: Atom) => void
-  ) => EventSubscription;
-
-  /**
-   * An event listener to the atom destruction
-   */
-  onDestroy(callback: (atom: Atom) => void): EventSubscription;
-
-  /**
-   * Watch for atom value change
-   * This can be used only when atom's default value is an object or an array
-   * The key accepts dot.notation syntax
-   */
-  watch: (
-    key: string,
-    callback: AtomPartialChangeCallback
-  ) => EventSubscription;
-
-  /**
-   * Get value from atom's value
-   * Works only if atom's value is an object
-   */
-  get(key: string, defaultValue?: any): any;
-
-  /**
-   * Watch for atom's value change and return it
-   * When the atom's value is changed, the component will be rerendered again.
-   */
-  useValue: () => any;
-
-  /**
-   * An alias for useAtomWatch but specific for this atom
-   */
-  useWatch: (key: string, callback: AtomPartialChangeCallback) => void;
-
-  /**
-   * An alias for useAtomWatch but specific for this atom
-   */
-  useWatcher<T>(key: string): T;
-
-  /**
-   * Remove item by the given index or callback
-   *
-   * Works only if atom's value is an array
-   * This will trigger the atom event change
-   */
-  removeItem: (
-    indexOrCallback: number | ((item: any, itemIndex: number) => boolean)
-  ) => void;
-
-  /**
-   * Remove list of items from the current atom for the given list of indexes or callback
-   *
-   * Works only if atom's value is an array
-   * This will trigger the atom event change
-   */
-  removeItems: (
-    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean)
-  ) => void;
-
-  /**
-   * Add item to the end of the atom's value
-   *
-   * Works only if atom's value is an array
-   * This will trigger the atom event change
-   */
-  addItem: (item: any) => void;
-
-  /**
-   * Get item by the given index or callback
-   *
-   * Works only if atom's value is an array
-   */
-  getItem: (
-    indexOrCallback: number | ((item: any, index: number) => any)
-  ) => any;
-
-  /**
-   * Get item index by the given item
-   *
-   * Works only if atom's value is an array
-   */
-  getItemIndex: (
-    callback: (item: any, index: number, array: any[]) => any
-  ) => number;
-
-  /**
-   * Replace item by the given index
-   *
-   * Works only if atom's value is an array
-   * This will trigger the atom event change
-   */
-  replaceItem: (index: number, item: any) => void;
-
-  /**
-   * Modify the atom's array items by the given callback
-   *
-   * Works only if atom's value is an array
-   * This will trigger the atom event change
-   */
-  map: (callback: (item: any, index: number, array: any[]) => any) => void;
-
-  /**
-   * Get the atom's value type
-   */
-  readonly type;
-
-  /**
-   * Get the atom's value length
-   *
-   * Works only if atom's value is an array or a string
-   */
-  readonly length: number;
-};
-```
-
-## Using Atoms outside components
-
-Atoms can be accessed outside components from its instances directly.
-
-## Get atom current value
+For example, if you're using the atom outside a `React component` or you're using it inside a component but don't want to rerender the component when the atom's value changes, you can use the `atom.value` property.
 
 ```ts
 // anywhere in your app
@@ -409,16 +147,29 @@ import { currencyAtom } from "~/src/atoms";
 console.log(currencyAtom.value); // get current value
 ```
 
-## Get default value
+## Getting atom value and watch for its changes
 
-```ts
-// anywhere in your app
+Another way to get the atom's value when you're inside a React component, we can use `atom.useValue()` to get the atom's value and also trigger a component rerender when the atom's value changes.
+
+```tsx
+import React from "react";
 import { currencyAtom } from "~/src/atoms";
 
-console.log(currencyAtom.defaultValue);
+export default function Header() {
+  const currency = currencyAtom.useValue();
+
+  return (
+    <>
+      <h1>Header</h1>
+      Currency: {currency}
+    </>
+  );
+}
 ```
 
-## Updating value
+## Update atom's value
+
+The basic way to update atom's value is by using `atom.update`, this method receives the new value of the atom and updates it.
 
 ```ts
 // anywhere in your app
@@ -439,141 +190,241 @@ currencyAtom.update((oldValue, atom) => {
 });
 ```
 
-## Atom Update Consistency
+> Please do remember that `atom.update` must receive a new reference of the value, otherwise it will not trigger the change event, for example `atom.update({ ...user })` will trigger the change event.
 
-> Enhanced in v1.5.0
+## Get atom value and update it
 
-If the atom's new value is the same as the current value, the atom will not be updated and the component will not be rerendered, however, in arrays or objects to make sure the atom will trigger the update is to pass a new reference to the array or object.
+If you want to get the atom's value and update it at the same time, you can use `atom.useState()`.
 
-```ts
-// anywhere in your app
+```tsx
+import React from "react";
+import { currencyAtom } from "~/src/atoms";
 
-import { atom } from '@mongez/react-atom';
+export default function Header() {
+  const [currency, setCurrency] = currencyAtom.useState();
 
-const languagesAtom = atom({
-  key: 'languages',
-   default: ['en', 'ar'],
-});
-
-languagesAtom.value.push('fr'); 
-
-languagesAtom.update(languagesAtom.value); // this will not trigger the update
-
-languagesAtom.update(['en', 'ar']); // this will trigger the update
-languagesAtom.update([...languagesAtom.value, 'fr']); // this will trigger the update
+  return (
+    <>
+      <h1>Header</h1>
+      Currency: {currency}
+      <button onClick={(e) => setCurrency("EUR")}>EUR</button>
+      <button onClick={(e) => setCurrency("USD")}>USD</button>
+      <button onClick={(e) => setCurrency("EGP")}>EGP</button>
+    </>
+  );
+}
 ```
 
-Same applies on objects
+Works exactly like `useState` hook, the first item in the returned array is the current value of the atom, the second item is a function to update the atom's value.
 
-```ts
-// anywhere in your app
-import { atom } from '@mongez/react-atom';
+The main difference here is when the atom's value is changed from any other place, this component will be rerendered automatically.
 
-const userAtom = atom({
+## Watch form object's key changes
+
+Another super amazing feature here is to watch for a property of the atom's value if it's defined as an object.
+
+```tsx
+import React from "react";
+import {atom, Atom} from '@mongez/react-atom';
+
+type User = {
+  name: string;
+  email: string;
+  age: number;
+};
+
+const userAtom = atom<User>({
   key: 'user',
-   default: {
-    name: 'John',
-    age: 30,
-  },
+  default: {},
 });
-
-const user = userAtom.value;
-
-user.name = 'John Doe';
-
-userAtom.update(user); // this will not trigger the update
-
-userAtom.update({...user}); // this will trigger the update
 ```
 
-## Change atom single key
+Now let's create a component to display the user's name and email.
 
-If you're going to change a single key in the atom's value object, we may use `atom.change` for this purpose.
+```tsx
+import React from "react";
+import { userAtom } from "~/src/atoms";
 
-```ts
-import { atom } from "@mongez/atom-react";
+export default function User() {
+  const user = userAtom.useValue();
 
-const userAtom = atom({
+  return (
+    <>
+      <h1>User</h1>
+      <p>Name: {user.name}</p>
+      <p>Email: {user.email}</p>
+    </>
+  );
+}
+```
+
+Now let's update the user's name from another component.
+
+```tsx
+import React from "react";
+import { userAtom } from "~/src/atoms";
+
+export default function UserForm() {
+  const [user, setUser] = userAtom.useState();
+
+  return (
+    <>
+      <h1>User Form</h1>
+      <input
+        type="text"
+        value={user.name}
+        onChange={(e) => setUser({ ...user, name: e.target.value })}
+      />
+      <input
+        type="text"
+        value={user.email}
+        onChange={(e) => setUser({ ...user, email: e.target.value })}
+      />
+    </>
+  );
+}
+```
+
+This is great, but what if we want to have a component that will be rerendered only when the user's name changes, not the email, here we can use `atom.useWatcher` to watch for a specific property of the atom's value.
+
+```tsx
+import React from "react";
+import { userAtom } from "~/src/atoms";
+
+export default function User() {
+  const name = userAtom.useWatcher('name');
+
+  return (
+    <>
+      <h1>User</h1>
+      <p>Name: {name}</p>
+    </>
+  );
+}
+```
+
+Now when the `name` property is changed, this component will be rerendered automatically, otherwise it won't.
+
+## Use
+
+Using `atom.use` will merge both `useValue` and `useWatcher` methods into one.
+
+If the `use` received a parameter, then it will be watching for the given property change, otherwise it will watch for the entire atom's value change.
+
+```tsx
+type User = {
+  name: string;
+  age: number;
+  position: 'developer' | 'designer' | 'manager';
+  notifications: number;
+};
+
+const userAtom = atom<User>({
   key: "user",
   default: {
-    key: "Hasan",
-    address: {
-      city: "New York",
-    },
+    name: 'Hasan',
+    age: 25,
+    position: 'developer'
   },
 });
 
-userAtom.change("key", "Ali");
-userAtom.change("address.city", "Cairo");
+// now in any component
+import userAtom from './userAtom';
+export function Header() {
+  const notifications = userAtom.use('notifications');
+
+  return (
+    <header>
+      {notifications}
+    </header>
+  )
+}
 ```
 
-## Reset value
+This will only re-render the component when the `notifications` property changes.
 
-This feature might be useful in some scenarios when we need to reset the atom's value to its default value.
+Using `use` without any parameter will watch for the entire atom's value change.
 
-```ts
-// anywhere in your app
-import { currencyAtom } from "~/src/atoms";
+```tsx
+type User = {
+  name: string;
+  age: number;
+  position: 'developer' | 'designer' | 'manager';
+  notifications: number;
+};
 
-currencyAtom.reset(); // any component using the atom will be rerendered automatically.
+// now in any component
+import userAtom from './userAtom';
+
+export function Header() {
+  const user = userAtom.use();
+
+  return (
+    <header>
+      {user.notifications}
+    </header>
+  )
+}
 ```
 
-## Destroy atom
+This will be rerendered when the entire atom's value changes.
 
-We can also destroy the atom using `destroy()` method from the atom, this will stop re-rendering any component that using the atom using `useAtom` or `useAtomState` hooks.
+From `V1.6.0` types are enhanced, when you pass the `type` to the atom, then the `use` method will return the same type, also it will allow only properties that are defined in the type.
 
-```ts
-// anywhere in your app
-import { currencyAtom } from "~/src/atoms";
+```tsx
+type User = {
+  name: string;
+  age: number;
+  position: 'developer' | 'designer' | 'manager';
+  notifications: number;
+};
 
-currencyAtom.destroy();
+// now in any component
+import userAtom from './userAtom';
+
+export function Header() {
+  const notifications = userAtom.use('notifications'); // will return number, and Typescript will complain if you try to use other properties
+
+  return (
+    <header>
+      {notifications}
+    </header>
+  )
+}
 ```
 
-## Getting atom key
+## Changing only single key in the atom's value
 
-To get the atom key, use `atom.key` will return the atom key.
+Instead of passing the whole object to the `setUser` function, we can pass only the key we want to change using `atom.change` function.
 
-```ts
-// anywhere in your app
-import { currencyAtom } from "~/src/atoms";
+```tsx
+import React from "react";
+import { userAtom } from "~/src/atoms";
 
-console.log(currencyAtom.key); // currencyAtom
+export default function UserForm() {
+  const [user, setUser] = userAtom.useState();
+
+  return (
+    <>
+      <h1>User Form</h1>
+      <input
+        type="text"
+        value={user.name}
+        onChange={(e) => userAtom.change('name', e.target.value)}
+      />
+      <input
+        type="text"
+        value={user.email}
+        onChange={(e) => userAtom.change('email', e.target.value)}
+      />
+    </>
+  );
+}
 ```
 
-## Getting atom by key
+This will change only the given key in the atom's value, and trigger a component rerender if the atom's value is used in the component.
 
-If we want more dynamic way to get atoms, we can use `getAtom` utility to get the atom using its key.
-
-```ts
-// anywhere in your app
-import { getAtom } from "~/src/atoms";
-
-const currencyAtomAtom = getAtom("currency");
-```
-
-If there is no atom with that key, it will return a `null` value instead.
-
-## Getting atom value by key
-
-Another way to get an atom value directly using the atom key itself is by using `getAtomValue` utility.
-
-```ts
-// anywhere in your app
-import { getAtomValue } from "~/src/atoms";
-
-console.log(getAtomValue("currencyAtom")); // EUR
-```
-
-## Getting all atoms
-
-To list all registered atoms, use `atomsList` utility for that purpose.
-
-```ts
-// anywhere in your app
-import { atomsList } from "~/src/atoms";
-
-console.log(atomsList()); // [currencyAtom, ...]
-```
+> Please note that `change` method calls `update` method under the hood, so it will generate a new object.
 
 ## Get Atom single key value
 
@@ -605,6 +456,52 @@ If key doesn't exist, return default value instead.
 
 ```ts
 console.log(userAtom.get("email", "default@email.com")); // default@email.com
+```
+
+## Reset value
+
+This feature might be useful in some scenarios when we need to reset the atom's value to its default value.
+
+```ts
+// anywhere in your app
+import { currencyAtom } from "~/src/atoms";
+
+currencyAtom.reset(); // any component using the atom will be rerendered automatically.
+```
+
+This will trigger an atom update and set the atom's value to its default value.
+
+## Destroy atom
+
+We can also destroy the atom using `destroy()` method from the atom, this will stop re-rendering any component that using the atom using `useAtom` or `useAtomState` hooks.
+
+```ts
+// anywhere in your app
+import { currencyAtom } from "~/src/atoms";
+
+currencyAtom.destroy();
+```
+
+## Getting atom key
+
+To get the atom key, use `atom.key` will return the atom key.
+
+```ts
+// anywhere in your app
+import { currencyAtom } from "~/src/atoms";
+
+console.log(currencyAtom.key); // currencyAtom
+```
+
+## Getting all atoms
+
+To list all registered atoms, use `atomsList` utility for that purpose.
+
+```ts
+// anywhere in your app
+import { atomsList } from "~/src/atoms";
+
+console.log(atomsList()); // [currencyAtom, ...]
 ```
 
 ## get handler function
@@ -639,7 +536,7 @@ After Defining it
 import { atom } from "@mongez/atom-react";
 
 const settingsAtom = atom({
-  key: "user",
+  key: "settings",
   default: {
     isLoaded: false,
     settings: {},
@@ -661,7 +558,7 @@ settingsAtom.update({
   },
 });
 
-console.log(userAtom.get("websiteName")); // My Website Name
+console.log(settingsAtom.get("websiteName")); // My Website Name
 ```
 
 ## Listen to atom value changes
@@ -752,69 +649,15 @@ userAtom.update({
 });
 ```
 
-## Use Atom Watch Hook
+## Atom Watch Hook
 
-When using atom inside React Component, we can use `useAtomWatch` to listen for atom key change.
-
-```tsx
-import { useAtomWatch } from "@mongez/react-atom";
-
-export function SomeComponent() {
-  const [city, setCity] = useState(userAtom.get("address.city"));
-
-  useAtomWatch(userAtom, "address.city", setCity);
-
-  // first time will render New York then it will render Cairo
-
-  return <>Current City: {city}</>;
-}
-```
-
-The interesting thing here is the component will be re-rendered **only and only if** the `address.city` is changed regardless the other atom's value changes.
-
-## Internal Atom Watch Hook
-
-> Added in v1.2.5
-
-Alternatively, you can directly use the atom itself to listen for changes for specific key
+In some scenarios, we may need to watch for a key in the atom's value object for change and perform an action inside a component, the `atom.useWatch` hook is the perfect way to achieve this.
 
 ```tsx
 export function SomeComponent() {
   const [city, setCity] = useState(userAtom.get("address.city"));
 
   userAtom.useWatch("address.city", setCity);
-
-  // first time will render New York then it will render Cairo
-
-  return <>Current City: {city}</>;
-}
-```
-
-## Use Atom Watcher Hook
-
-We can also use `useAtomWatcher` hook to achieve the previous behavior in one step.
-
-```tsx
-import { useAtomWatcher } from "@mongez/react-atom";
-
-export function SomeComponent() {
-  const city = useAtomWatcher(userAtom, "address.city");
-
-  // first time will render New York then it will render Cairo
-
-  return <>Current City: {city}</>;
-}
-```
-
-## Internal Atom Watcher Hook
-
-> Added in v1.2.5
-
-You can directly use the atom itself to listen for changes for specific key and perform component rerender.
-
-```tsx
-export function SomeComponent() {
-  const city = userAtom.useWatcher("address.city");
 
   // first time will render New York then it will render Cairo
 
@@ -859,13 +702,7 @@ const subscription = currencyAtom.onDestroy((atom) => {
 });
 ```
 
-## Updating Atom Multiple times
-
-Regardless if you're using `atom.update` or `atom.change` and calling it multiple times, it will only trigger the update events only once as calling any of these methods are debounced.
-
 ## Atom Type
-
-> Added in v1.4.0
 
 We can get the type of the atom's value using `atom.type` property.
 
@@ -891,24 +728,20 @@ console.log(todoListAtom.type); // array
 
 ## Working with atom as arrays
 
-> Added in v1.4.0
-
 > Works only if the atom's default value is array
 
 We can get use of the following methods to make our life easier.
 
-- [Add Item](#add-item) add new item to the atom's array.
+- [Add Item](#add-item-to-the-array) add new item to the atom's array.
 - [Remove Item](#remove-item) Remove item from the atom's array.
 - [Remove Items](#remove-items) Remove items from the atom's array.
 - [Replace Item](#replace-item) Update item'value in the atom's array.
 - [Get Item](#get-item) Get item from the atom's array.
 - [Get Item Index](#get-item-index) Get item' index from the atom's array.
 - [Items Map](#atom-map) Map over the atom's array items and replace it with a new one.
-- [Items length](#items-item) Get the atom's array length.
+- [Items length](#get-atom-length) Get the length of the atom's array.
 
-### Add Item
-
-> Added in v1.4.0
+### Add Item to the array
 
 `atom.addItem(item: any) => void`
 
@@ -940,10 +773,6 @@ export function TodoList() {
 ```
 
 ### Remove Item
-
-> Added in v1.4.0
-
-> Works only if the atom's default value is array
 
 `atom.removeItem(index: number | (item: any, index: number) => number) => void`
 
@@ -994,10 +823,6 @@ To remove multiple items, use `removeItems` method instead.
 
 ### Remove Items
 
-> Added in v1.4.0
-
-> Works only if the atom's default value is array
-
 `atom.removeItem(indexes: number[] | (item: any, index: number) => number) => void`
 
 Works exactly like `removeItem` except that it accepts an array of indexes or a callback function to remove multiple items.
@@ -1012,10 +837,6 @@ todoListAtom.remoteItems((item) => item.id > 1);
 
 ### Replace Item
 
-> Added in v1.4.0
-
-> Works only if the atom's default value is array
-
 `atom.replaceItem(index: number, newItemValue: any) => void`
 
 Updates item's value by for the given index
@@ -1028,10 +849,6 @@ todoListAtom.replaceItem(2, {
 ```
 
 ### Get Item
-
-> Added in v1.4.0
-
-> Works only if the atom's default value is array
 
 `atom.getItem(indexOrCallback: number | ((item: any, index: number) => any)) => any`
 
@@ -1049,10 +866,6 @@ const otherItem = todoListAtom.getItem((item) => item.id === itemId);
 
 ### Get Item Index
 
-> Added in v1.4.0
-
-> Works only if the atom's default value is array
-
 `atom.getItemIndex(callback: (item: any, index: number, array: any[]) => any) => any`
 
 Get the index of the first matched element to the given callback.
@@ -1063,10 +876,6 @@ const itemIndex = todoListAtom.getItemIndex((item) => item.id === itemId); // 2 
 ```
 
 ### Atom map
-
-> Added in v1.4.0
-
-> Works only if the atom's default value is array
 
 `atom.map(callback: (item: any, index: number, array: any[]) => any) => any`
 
@@ -1084,9 +893,7 @@ numbersAtom.map((number) => number * 2);
 console.log(numbersAtom.value); // [2, 4, 6, 8];
 ```
 
-## Get Atom's length
-
-> Added in v1.4.0
+## Get Atom length
 
 This can be useful feature when working with arrays or strings, `atom.length` returns the count of total elements/characters of the atom's current value.
 
@@ -1106,138 +913,39 @@ todoListAtom.addItem({
 console.log(todoListAtom.length); // 1
 ```
 
-## Atom Actions
-
-> Added in v1.5.0
-
-Sometimes we need to do actions over the atom's value, for example, we want to append a string to current atom value.
-
-```ts
-const textAtom = atom({
-  key: "text",
-  default: "Hello",
-  actions: {
-    append: (text: string) => {
-      textAtom.update((current) => current + text);
-    }
-  }
-});
-
-// now let's use it in anywhere in the app
-
-textAtom.actions.append(" World");
-```
-
-## Use
-
-> Added in v1.6.0
-
-Using `atom.use` will merge both `useValue` and `useWatcher` methods into one.
-
-If the `use` received a parameter, then it will be watching for the given property change, otherwise it will watch for the entire atom's value change.
-
-```tsx
-type User = {
-  name: string;
-  age: number;
-  position: 'developer' | 'designer' | 'manager';
-  notifications: number;
-};
-
-const userAtom = atom<User>({
-  key: "user",
-  default: {
-    name: 'Hasan',
-    age: 25,
-    position: 'developer'
-  },
-});
-
-// now in any component
-import userAtom from './userAtom';
-export function Header() {
-  const notifications = userAtom.use('notifications');
-
-  return (
-    <header>
-      {notifications}
-    </header>
-  )
-}
-```
-
-This will only re-render the component when the `notifications` property changes.
-
-Using `use` without any parameter will watch for the entire atom's value change.
-
-```tsx
-type User = {
-  name: string;
-  age: number;
-  position: 'developer' | 'designer' | 'manager';
-  notifications: number;
-};
-
-// now in any component
-import userAtom from './userAtom';
-
-export function Header() {
-  const user = userAtom.use();
-
-  return (
-    <header>
-      {user.notifications}
-    </header>
-  )
-}
-```
-
-This will be rerendered when the entire atom's value changes.
-
-> Please do remember that `atom.update` must receive a new reference of the value, otherwise it will not trigger the change event, for example `atom.update({ ...user })` will trigger the change event.
-
-From `V1.6.0` types are enhanced, when you pass the `type` to the atom, then the `use` method will return the same type, also it will allow only properties that are defined in the type.
-
-```tsx
-type User = {
-  name: string;
-  age: number;
-  position: 'developer' | 'designer' | 'manager';
-  notifications: number;
-};
-
-// now in any component
-import userAtom from './userAtom';
-
-export function Header() {
-  const notifications = userAtom.use('notifications'); // will return number, and Typescript will complain if you try to use other properties
-
-  return (
-    <header>
-      {notifications}
-    </header>
-  )
-}
-```
-
 ## Change Log
 
+- V2.0.0 (18 Dec 2022)
+  - Removed `useAtom` hook.
+  - Removed `useAtomValue` hook.
+  - Removed `useAtomState` hook.
+  - Removed `useAtomWatch` hook.
+  - Removed `useAtomWatcher` hook.
+  - Removed `getAtomValue` function.
+  - Removed `name` property from atom.
+  - Removed `actions`.
+  - Removed atom change debounce.
+  - Removed atom update debounce.
+  - Added `useState` hook to atom.
+  - Enhanced `atom typings`.
+  - Deprecated `atom.useValue` method, use `atom.use` instead.
+  - Deprecated `atom.useWatcher` method, use `atom.use` instead.
 - V1.6.0 (14 Dec 2022)
   - Added [use](#use) method: Use atom's value or single value in a callback function.
   - Enhanced types for objects.
 - V1.5.0 (25 Sept 2022)
-  - Added [Atom Actions](#atom-actions)
-  - Enhanced [Atom Update Consistency](#atom-update-consistency)
+  - Added Atom Actions
+  - Enhanced Atom Update Consistency
 - V1.4.1 (01 August 2022)
   - `beforeUpdate` now receives the old value as second argument and the atom object as third argument.
 - V1.4.0 (31 July 2022)
-  - Added [atom.addItem](#add-item) method: Add new item to the atom.
+  - Added [atom.addItem](#add-item-to-the-array) method: Add new item to the atom.
   - Added [atom.removeItem](#remove-item) method: Add new item to the atom.
   - Added [atom.replaceItem](#replace-item) method: update item in the atom's array.
   - Added [atom.getItem](#get-item) method: Get an item from the atom's array.
   - Added [atom.getItemIndex](#get-item) method: Get item index from the atom's array.
   - Added [atom.map](#atom-map): Map over the atom's values and trigger an update over it.
-  - Added [atom.length](#atom-length): Get the length of the atom.
+  - Added [atom.length](#get-atom-length): Get the length of the atom.
   - Added [atom.type](#atom-type): Get the atom's value type.
 - V1.3.0 (28 July 2022)
   - Fixed checking bind on null values.
@@ -1258,10 +966,10 @@ export function Header() {
   - Added [get handler function](#get-handler-function).
   - Disallowed triggering update/changes if called multiple times in the same time.
 - V1.2.0 (25 Apr 2022)
-  - Added [atom.watch Function](#watch-for-partial-change) feature.
-  - Added [Atom.get Function](#get-atom-single-key-value).
-  - Added [Atom.change Function](#change-atom-single-key).
-  - Added [useAtomWatcher Hook](#use-atom-watcher-hook).
-  - Added [useAtomWatch Hook](#use-atom-watch-hook).
+  - Added atom.watch Function feature.
+  - Added Atom.get Function.
+  - Added Atom.change Function.
+  - Added useAtomWatcher Hook.
+  - Added useAtomWatch Hook.
 - V1.1.0 (25 Apr 2022)
   - Added [beforeUpdate](#value-mutation-before-update) function.
