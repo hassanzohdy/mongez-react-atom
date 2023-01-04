@@ -915,6 +915,8 @@ console.log(todoListAtom.length); // 1
 
 ## Change Log
 
+- V2.0.1 (04 Jan 2023)
+  - Fixed atom typings when using anything that is not an object.
 - V2.0.0 (18 Dec 2022)
   - Removed `useAtom` hook.
   - Removed `useAtomValue` hook.

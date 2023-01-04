@@ -3,17 +3,15 @@ import { EventSubscription } from "@mongez/events";
 export type AtomPartialChangeCallback = (
   newValue: any,
   oldValue: any,
-  atom: Atom<any>
+  atom: Atom<any>,
 ) => void;
 
-export type AtomValue<Value> = Value extends Record<string, any>
-  ? Value
-  : Record<string, any>;
+export type AtomValue<Value> = Value;
 
 /**
  * Atom Options
  */
-export type AtomOptions<Value> = {
+export type AtomOptions<Value = any> = {
   /**
    * Atom unique key
    */
@@ -28,7 +26,7 @@ export type AtomOptions<Value> = {
   beforeUpdate?: (
     newValue: Value,
     oldValue: Value,
-    atom: Atom<AtomValue<Value>>
+    atom: Atom<AtomValue<Value>>,
   ) => any;
   /**
    * Triggered when atom is updated
@@ -43,14 +41,14 @@ export type AtomOptions<Value> = {
 export type AtomChangeCallback = (
   newValue: any,
   oldValue: any,
-  atom: Atom<any>
+  atom: Atom<any>,
 ) => void;
 
 /**
  * The Atom Instance
  */
 // Generic Type Value can be any type or object with
-export type Atom<Value extends Record<string, any> = any> = {
+export type Atom<Value = any> = {
   /**
    * Atom unique key, set by the user
    */
@@ -118,7 +116,7 @@ export type Atom<Value extends Record<string, any> = any> = {
    */
   watch: <T extends keyof Value>(
     key: T,
-    callback: AtomPartialChangeCallback
+    callback: AtomPartialChangeCallback,
   ) => EventSubscription;
 
   /**
@@ -157,7 +155,7 @@ export type Atom<Value extends Record<string, any> = any> = {
    */
   useWatch: <T extends keyof Value>(
     key: T,
-    callback: AtomPartialChangeCallback
+    callback: AtomPartialChangeCallback,
   ) => void;
 
   /**
@@ -167,7 +165,7 @@ export type Atom<Value extends Record<string, any> = any> = {
    * This will trigger the atom event change
    */
   removeItem: (
-    indexOrCallback: number | ((item: any, itemIndex: number) => boolean)
+    indexOrCallback: number | ((item: any, itemIndex: number) => boolean),
   ) => void;
 
   /**
@@ -177,7 +175,7 @@ export type Atom<Value extends Record<string, any> = any> = {
    * This will trigger the atom event change
    */
   removeItems: (
-    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean)
+    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean),
   ) => void;
 
   /**
@@ -194,7 +192,7 @@ export type Atom<Value extends Record<string, any> = any> = {
    * Works only if atom's value is an array
    */
   getItem: (
-    indexOrCallback: number | ((item: any, index: number) => any)
+    indexOrCallback: number | ((item: any, index: number) => any),
   ) => any;
 
   /**
@@ -203,7 +201,7 @@ export type Atom<Value extends Record<string, any> = any> = {
    * Works only if atom's value is an array
    */
   getItemIndex: (
-    callback: (item: any, index: number, array: any[]) => boolean
+    callback: (item: any, index: number, array: any[]) => boolean,
   ) => number;
 
   /**
