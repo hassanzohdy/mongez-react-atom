@@ -3,7 +3,7 @@ import { EventSubscription } from "@mongez/events";
 export type AtomPartialChangeCallback = (
   newValue: any,
   oldValue: any,
-  atom: Atom<any>,
+  atom: Atom<any>
 ) => void;
 
 export type AtomValue<Value> = Value;
@@ -26,8 +26,8 @@ export type AtomOptions<Value = any> = {
   beforeUpdate?: (
     newValue: Value,
     oldValue: Value,
-    atom: Atom<AtomValue<Value>>,
-  ) => any;
+    atom: Atom<AtomValue<Value>>
+  ) => Value;
   /**
    * Triggered when atom is updated
    */
@@ -41,7 +41,7 @@ export type AtomOptions<Value = any> = {
 export type AtomChangeCallback = (
   newValue: any,
   oldValue: any,
-  atom: Atom<any>,
+  atom: Atom<any>
 ) => void;
 
 /**
@@ -74,7 +74,7 @@ export type Atom<Value = any> = {
    * or it can accept a callback that passes the old value and the atom instance
    * This will trigger atom event update
    */
-  update: (value: ((oldValue: any, atom: Atom<Value>) => any) | any) => void;
+  update: (value: ((oldValue: Value, atom: Atom<Value>) => any) | any) => void;
 
   /**
    * Change only one key of the atom
@@ -116,7 +116,7 @@ export type Atom<Value = any> = {
    */
   watch: <T extends keyof Value>(
     key: T,
-    callback: AtomPartialChangeCallback,
+    callback: AtomPartialChangeCallback
   ) => EventSubscription;
 
   /**
@@ -155,7 +155,7 @@ export type Atom<Value = any> = {
    */
   useWatch: <T extends keyof Value>(
     key: T,
-    callback: AtomPartialChangeCallback,
+    callback: AtomPartialChangeCallback
   ) => void;
 
   /**
@@ -165,7 +165,7 @@ export type Atom<Value = any> = {
    * This will trigger the atom event change
    */
   removeItem: (
-    indexOrCallback: number | ((item: any, itemIndex: number) => boolean),
+    indexOrCallback: number | ((item: any, itemIndex: number) => boolean)
   ) => void;
 
   /**
@@ -175,7 +175,7 @@ export type Atom<Value = any> = {
    * This will trigger the atom event change
    */
   removeItems: (
-    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean),
+    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean)
   ) => void;
 
   /**
@@ -192,7 +192,7 @@ export type Atom<Value = any> = {
    * Works only if atom's value is an array
    */
   getItem: (
-    indexOrCallback: number | ((item: any, index: number) => any),
+    indexOrCallback: number | ((item: any, index: number) => any)
   ) => any;
 
   /**
@@ -201,7 +201,7 @@ export type Atom<Value = any> = {
    * Works only if atom's value is an array
    */
   getItemIndex: (
-    callback: (item: any, index: number, array: any[]) => boolean,
+    callback: (item: any, index: number, array: any[]) => boolean
   ) => number;
 
   /**

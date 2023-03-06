@@ -1,6 +1,6 @@
 {
     "name": "@mongez/react-atom",
-    "version": "2.0.2",
+    "version": "2.0.3",
     "description": "A simple state management tool for React Js.",
     "main": "src/index.ts",
     "author": "hassanzohdy",
@@ -10,8 +10,8 @@
     },
     "license": "MIT",
     "dependencies": {
-        "@mongez/events": "^1.x.x",
-        "@mongez/reinforcements": "^2.x.x"
+        "@mongez/events": "^2.0.0",
+        "@mongez/reinforcements": "^2.2.8"
     },
     "keywords": [
         "react",
