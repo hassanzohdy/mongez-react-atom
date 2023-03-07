@@ -5,7 +5,7 @@ import {
   Atom,
   AtomOptions,
   AtomPartialChangeCallback,
-  AtomValue,
+  AtomValue
 } from "./types";
 
 const atoms: Atom<any>[] = [];
@@ -13,8 +13,8 @@ const atoms: Atom<any>[] = [];
 /**
  * Get atom by name
  */
-export function getAtom(name: string): Atom<any> | null {
-  return atoms.find((atom) => atom.key === name) || null;
+export function getAtom<T>(name: string): Atom<T> | undefined {
+  return atoms.find((atom) => atom.key === name);
 }
 
 function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
@@ -209,7 +209,7 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
         return data.get(key as string, defaultValue, this.currentValue);
       }
 
-      const value = get(this.currentValue, key, defaultValue);
+      const value = get(this.currentValue, key as string, defaultValue);
 
       // if the value is bindable, then bind the current value to be used as `this`
       return value?.bind ? value.bind(this.currentValue) : value;
@@ -246,11 +246,11 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
 export function atom<Value = any>(
   data: AtomOptions<AtomValue<Value>>
 ): Atom<AtomValue<Value>> {
-  if (getAtom(data.key)) {
-    throw new Error(
-      `An atom is already defined with that name '${data.key}', please use another name for this atom.`
-    );
-  }
+  // if (getAtom<Value>(data.key)) {
+  //   throw new Error(
+  //     `An atom is already defined with that name '${data.key}', please use another name for this atom.`
+  //   );
+  // }
 
   const atom = createAtom<AtomValue<Value>>(data as any);
 
