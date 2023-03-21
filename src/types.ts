@@ -19,7 +19,7 @@ export type AtomOptions<Value = any> = {
   /**
    * Atom default value
    */
-  default: Value;
+  default: Value | Partial<Value>;
   /**
    * Make adjustments on the value before updating the atom
    */
@@ -74,7 +74,15 @@ export type Atom<Value = any> = {
    * or it can accept a callback that passes the old value and the atom instance
    * This will trigger atom event update
    */
-  update: (value: ((oldValue: Value, atom: Atom<Value>) => any) | any) => void;
+  update: (
+    value: ((oldValue: Value, atom: Atom<Value>) => Value) | Value
+  ) => void;
+
+  /**
+   * Merge the given object with current atom value
+   * This is sort of partial update that works only if atom's value is an object
+   */
+  merge: (value: Partial<Value>) => void;
 
   /**
    * Change only one key of the atom
@@ -138,6 +146,8 @@ export type Atom<Value = any> = {
 
   /**
    * An alias for useAtomWatch but specific for this atom
+   *
+   * @deprecated use `use` instead
    */
   useWatcher<T extends keyof Value>(key: T): Value[T];
 

@@ -192,6 +192,111 @@ currencyAtom.update((oldValue, atom) => {
 
 > Please do remember that `atom.update` must receive a new reference of the value, otherwise it will not trigger the change event, for example `atom.update({ ...user })` will trigger the change event.
 
+```ts
+// /src/atoms/user-atom.ts
+import { atom } from "@mongez/react-atom";
+
+export type UserData = {
+  name: string;
+  email: string;
+  age: number;
+  id: number;
+};
+
+export const userAtom = atom<UserData>({
+  key: "user",
+  default: {
+    name: "Hasan",
+    age: 30,
+    email: "hassanzohdy@gmail.com",
+    id: 1,
+  },
+});
+```
+
+Now if we want to make an update for the user atom using `atom.update`, it will be something like this:
+
+```ts
+// anywhere in your app
+
+import { userAtom } from "~/src/atoms/user-atom";
+
+userAtom.update({
+  ...userAtom.value,
+  name: "Ahmed",
+});
+```
+
+Or using callback to get the old value:
+
+```ts
+// anywhere in your app
+
+import { userAtom } from "~/src/atoms/user-atom";
+
+userAtom.update((oldValue) => {
+  return {
+    ...oldValue,
+    name: "Ahmed",
+  };
+});
+```
+
+## Merge atom's value
+
+> Added in v2.1.0
+
+If the atom is an object atom, you can use `atom.merge` to merge the new value with the old value.
+
+```ts
+// src/atoms/user-atom.ts
+import { atom } from "@mongez/react-atom";
+
+export type UserData = {
+  name: string;
+  email: string;
+  age: number;
+  id: number;
+};
+
+export const userAtom = atom<UserData>({
+  key: 'user',
+  default: {
+    name: 'Hasan',
+    age: 30,
+    email: 'hassanzohdy@gmail.com',
+    id: 1,
+  },
+});
+```
+
+Now if we want to make an update for the user atom using `atom.update`, it will be something like this:
+
+```ts
+// anywhere in your app
+import { userAtom } from "~/src/atoms";
+
+userAtom.update({
+  ...userAtom.value,
+  name: 'Ahmed',
+  age: 25,
+})
+```
+
+If you notice, we've to spread the old value and then add the new values, this is good, but we can use `atom.merge` instead.
+
+```ts
+// anywhere in your app
+import { userAtom } from "~/src/atoms";
+
+userAtom.merge({
+  name: 'Ahmed',
+  age: 25,
+})
+```
+
+This is just a shortcut for `atom.update`, it will merge the new value with the old value and then update the atom.
+
 ## Get atom value and update it
 
 If you want to get the atom's value and update it at the same time, you can use `atom.useState()`.
@@ -215,7 +320,7 @@ export default function Header() {
 }
 ```
 
-Works exactly like `useState` hook, the first item in the returned array is the current value of the atom, the second item is a function to update the atom's value.
+Works exactly like `useState` hook, the first item in the returned array is the current value of the atom, the second item is a state updater for the atom's value.
 
 The main difference here is when the atom's value is changed from any other place, this component will be rerendered automatically.
 
@@ -310,6 +415,8 @@ Now when the `name` property is changed, this component will be rerendered autom
 Using `atom.use` will merge both `useValue` and `useWatcher` methods into one.
 
 If the `use` received a parameter, then it will be watching for the given property change, otherwise it will watch for the entire atom's value change.
+
+> Starting from version 2 and above, `atom.use` will be the recommended way to watch for atom's value changes for single property atoms instead of `useWatcher` as `useWatcher` will be removed in the next release.
 
 ```tsx
 type User = {
@@ -915,6 +1022,11 @@ console.log(todoListAtom.length); // 1
 
 ## Change Log
 
+- V2.1.0 (21 Mar 2023)
+  - Added `merge` method to atom.
+  - Enhanced `update` typings.
+  - Fixed `default` type to accept empty object.
+  - `useWatcher` is now deprecated, use `use` instead.
 - V2.0.1 (04 Jan 2023)
   - Fixed atom typings when using anything that is not an object.
 - V2.0.0 (18 Dec 2022)

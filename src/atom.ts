@@ -5,7 +5,7 @@ import {
   Atom,
   AtomOptions,
   AtomPartialChangeCallback,
-  AtomValue
+  AtomValue,
 } from "./types";
 
 const atoms: Atom<any>[] = [];
@@ -14,7 +14,7 @@ const atoms: Atom<any>[] = [];
  * Get atom by name
  */
 export function getAtom<T>(name: string): Atom<T> | undefined {
-  return atoms.find((atom) => atom.key === name);
+  return atoms.find(atom => atom.key === name);
 }
 
 function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
@@ -46,7 +46,7 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
       return atomType;
     },
     addItem(item) {
-      this.update([...this.currentValue, item]);
+      this.update([...this.currentValue, item] as Value);
     },
     removeItem(indexOrCallback) {
       const index =
@@ -56,18 +56,19 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
 
       if (index === -1) return;
 
-      this.update((this.value as any[]).filter((_, i) => i !== index));
+      this.update((this.value as any[]).filter((_, i) => i !== index) as Value);
     },
     removeItems(indexesOrCallback) {
-      this.update(
+      const newData: any =
         typeof indexesOrCallback === "function"
           ? (this.value as any[]).filter(
-              indexesOrCallback as (item: any, index: number) => boolean
+              indexesOrCallback as (item: any, index: number) => boolean,
             )
           : (this.value as any[]).filter(
-              (_, i) => !(indexesOrCallback as number[]).includes(i)
-            )
-      );
+              (_, i) => !(indexesOrCallback as number[]).includes(i),
+            );
+
+      this.update(newData as Value);
     },
     getItem(indexOrCallback) {
       const index =
@@ -80,12 +81,12 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
       return this.value[index];
     },
     getItemIndex(
-      callback: (item: any, index: number, array: any[]) => boolean
+      callback: (item: any, index: number, array: any[]) => boolean,
     ) {
       return (this.value as any[]).findIndex(callback);
     },
     map(callback: (item: any, index: number, array: any[]) => any) {
-      this.update((this.value as any[]).map(callback));
+      this.update((this.value as any[]).map(callback) as Value);
     },
     get length() {
       return (this.value as any[]).length;
@@ -95,11 +96,11 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
         ...(this.value as any[]).slice(0, index),
         item,
         ...(this.value as any[]).slice(index + 1),
-      ]);
+      ] as Value);
     },
     useWatch<T extends keyof Value>(
       key: T,
-      callback: AtomPartialChangeCallback
+      callback: AtomPartialChangeCallback,
     ) {
       useEffect(() => {
         const event = this.watch(key, callback);
@@ -108,7 +109,7 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
       }, [key, callback]);
     },
     use<T extends keyof Value>(
-      key?: keyof Value
+      key?: keyof Value,
     ): T extends keyof Value ? Value[T] : Value {
       if (!key) {
         // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -143,7 +144,7 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
     },
     watch<T extends keyof Value>(
       key: T,
-      callback: AtomPartialChangeCallback
+      callback: AtomPartialChangeCallback,
     ): EventSubscription {
       if (!watchers[key]) {
         watchers[key] = [];
@@ -170,17 +171,23 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
         [key]: newValue,
       });
     },
-    update(newValue: Value) {
+    merge(newValue: Partial<Value>) {
+      this.update({
+        ...this.currentValue,
+        ...newValue,
+      });
+    },
+    update(newValue: ((oldValue: Value, atom: Atom<Value>) => Value) | Value) {
       if (newValue === this.currentValue) return;
 
       const oldValue = this.currentValue;
 
       if (typeof newValue === "function") {
-        newValue = newValue(oldValue, this);
+        newValue = (newValue as any)(oldValue, this);
       }
 
       if (data.beforeUpdate) {
-        newValue = data.beforeUpdate(newValue, oldValue, this);
+        newValue = data.beforeUpdate(newValue as Value, oldValue, this);
       }
 
       this.currentValue = newValue;
@@ -193,14 +200,14 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
           if (keyOldValue !== keyNewValue) {
             watchers[key].forEach(
               (callback: (newValue: any, oldValue: any) => void) =>
-                callback(keyNewValue, keyOldValue)
+                callback(keyNewValue, keyOldValue),
             );
           }
         }
       }
     },
     onChange(
-      callback: (newValue: Value, oldValue: Value, atom: Atom<Value>) => void
+      callback: (newValue: Value, oldValue: Value, atom: Atom<Value>) => void,
     ): EventSubscription {
       return events.subscribe(event("update"), callback);
     },
@@ -218,9 +225,7 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
       events.trigger(event("delete"), this);
 
       events.unsubscribeNamespace(atomEvent);
-      const atomIndex: number = atoms.findIndex(
-        (atom) => atom.key === this.key
-      );
+      const atomIndex: number = atoms.findIndex(atom => atom.key === this.key);
       if (atomIndex !== -1) {
         atoms.splice(atomIndex, 1);
       }
@@ -244,7 +249,7 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
  * Create a new atom
  */
 export function atom<Value = any>(
-  data: AtomOptions<AtomValue<Value>>
+  data: AtomOptions<AtomValue<Value>>,
 ): Atom<AtomValue<Value>> {
   // if (getAtom<Value>(data.key)) {
   //   throw new Error(
