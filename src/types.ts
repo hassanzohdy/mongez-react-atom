@@ -52,7 +52,7 @@ export type Atom<Value = any> = {
   /**
    * Atom unique key, set by the user
    */
-  key?: string;
+  key: string;
 
   /**
    * Atom default value, set by the user
@@ -136,7 +136,7 @@ export type Atom<Value = any> = {
   /**
    * Return the value of atom or just key of it
    */
-  use<T extends keyof Value>(key?: T): T extends keyof Value ? Value[T] : Value;
+  use<T extends keyof Value>(key: T): Value[T];
 
   /**
    * Watch for atom's value change and return it

@@ -1,6 +1,7 @@
 import events, { EventSubscription } from "@mongez/events";
 import { clone, get } from "@mongez/reinforcements";
 import { useEffect, useState } from "react";
+import { useAtom } from "./ssr";
 import {
   Atom,
   AtomOptions,
@@ -108,16 +109,10 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
         return () => event.unsubscribe();
       }, [key, callback]);
     },
-    use<T extends keyof Value>(
-      key?: keyof Value
-    ): T extends keyof Value ? Value[T] : Value {
-      if (!key) {
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        return this.useValue() as any;
-      } else {
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        return this.useWatcher(key as any) as any;
-      }
+    use<T extends keyof Value>(key: keyof Value): Value[T] {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      const atom = useAtom(this.key) || this;
+      return atom.useWatcher(key as any) as any;
     },
     useState() {
       const [value, setValue] = useState(this.currentValue);
@@ -132,7 +127,8 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
       return [value, this.update.bind(this)];
     },
     useValue() {
-      return this.useState()[0];
+      const atom = useAtom(this.key) || this;
+      return atom.useState()[0];
     },
     useWatcher<T extends keyof Value>(key: T) {
       const value = this.get(key);
@@ -163,7 +159,7 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
       return this.default;
     },
     get value(): Value {
-      return this.currentValue;
+      return atom.currentValue;
     },
     change<T extends keyof Value>(key: T, newValue: any) {
       this.update({
@@ -253,12 +249,6 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
 export function atom<Value = any>(
   data: AtomOptions<AtomValue<Value>>
 ): Atom<AtomValue<Value>> {
-  // if (getAtom<Value>(data.key)) {
-  //   throw new Error(
-  //     `An atom is already defined with that name '${data.key}', please use another name for this atom.`
-  //   );
-  // }
-
   const atom = createAtom<AtomValue<Value>>(data as any);
 
   atoms.push(atom);
@@ -274,9 +264,9 @@ export function atomsList(): Atom<any>[] {
 }
 
 /**
- * Return atoms in object format
+ * Get atoms as objects key/value
  */
-export function atomsObject(): { [key: string]: Atom<any> } {
+export function atomsObject(): Record<string, any> {
   return atoms.reduce((acc, atom) => {
     acc[atom.key] = { ...atom };
     return acc;

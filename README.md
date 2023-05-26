@@ -260,11 +260,11 @@ export type UserData = {
 };
 
 export const userAtom = atom<UserData>({
-  key: 'user',
+  key: "user",
   default: {
-    name: 'Hasan',
+    name: "Hasan",
     age: 30,
-    email: 'hassanzohdy@gmail.com',
+    email: "hassanzohdy@gmail.com",
     id: 1,
   },
 });
@@ -278,9 +278,9 @@ import { userAtom } from "~/src/atoms";
 
 userAtom.update({
   ...userAtom.value,
-  name: 'Ahmed',
+  name: "Ahmed",
   age: 25,
-})
+});
 ```
 
 If you notice, we've to spread the old value and then add the new values, this is good, but we can use `atom.merge` instead.
@@ -290,9 +290,9 @@ If you notice, we've to spread the old value and then add the new values, this i
 import { userAtom } from "~/src/atoms";
 
 userAtom.merge({
-  name: 'Ahmed',
+  name: "Ahmed",
   age: 25,
-})
+});
 ```
 
 This is just a shortcut for `atom.update`, it will merge the new value with the old value and then update the atom.
@@ -330,7 +330,7 @@ Another super amazing feature here is to watch for a property of the atom's valu
 
 ```tsx
 import React from "react";
-import {atom, Atom} from '@mongez/react-atom';
+import { atom, Atom } from "@mongez/react-atom";
 
 type User = {
   name: string;
@@ -339,7 +339,7 @@ type User = {
 };
 
 const userAtom = atom<User>({
-  key: 'user',
+  key: "user",
   default: {},
 });
 ```
@@ -397,7 +397,7 @@ import React from "react";
 import { userAtom } from "~/src/atoms";
 
 export default function User() {
-  const name = userAtom.useWatcher('name');
+  const name = userAtom.useWatcher("name");
 
   return (
     <>
@@ -422,29 +422,25 @@ If the `use` received a parameter, then it will be watching for the given proper
 type User = {
   name: string;
   age: number;
-  position: 'developer' | 'designer' | 'manager';
+  position: "developer" | "designer" | "manager";
   notifications: number;
 };
 
 const userAtom = atom<User>({
   key: "user",
   default: {
-    name: 'Hasan',
+    name: "Hasan",
     age: 25,
-    position: 'developer'
+    position: "developer",
   },
 });
 
 // now in any component
-import userAtom from './userAtom';
+import userAtom from "./userAtom";
 export function Header() {
-  const notifications = userAtom.use('notifications');
+  const notifications = userAtom.use("notifications");
 
-  return (
-    <header>
-      {notifications}
-    </header>
-  )
+  return <header>{notifications}</header>;
 }
 ```
 
@@ -456,21 +452,17 @@ Using `use` without any parameter will watch for the entire atom's value change.
 type User = {
   name: string;
   age: number;
-  position: 'developer' | 'designer' | 'manager';
+  position: "developer" | "designer" | "manager";
   notifications: number;
 };
 
 // now in any component
-import userAtom from './userAtom';
+import userAtom from "./userAtom";
 
 export function Header() {
   const user = userAtom.use();
 
-  return (
-    <header>
-      {user.notifications}
-    </header>
-  )
+  return <header>{user.notifications}</header>;
 }
 ```
 
@@ -482,21 +474,17 @@ From `V1.6.0` types are enhanced, when you pass the `type` to the atom, then the
 type User = {
   name: string;
   age: number;
-  position: 'developer' | 'designer' | 'manager';
+  position: "developer" | "designer" | "manager";
   notifications: number;
 };
 
 // now in any component
-import userAtom from './userAtom';
+import userAtom from "./userAtom";
 
 export function Header() {
-  const notifications = userAtom.use('notifications'); // will return number, and Typescript will complain if you try to use other properties
+  const notifications = userAtom.use("notifications"); // will return number, and Typescript will complain if you try to use other properties
 
-  return (
-    <header>
-      {notifications}
-    </header>
-  )
+  return <header>{notifications}</header>;
 }
 ```
 
@@ -517,12 +505,12 @@ export default function UserForm() {
       <input
         type="text"
         value={user.name}
-        onChange={(e) => userAtom.change('name', e.target.value)}
+        onChange={(e) => userAtom.change("name", e.target.value)}
       />
       <input
         type="text"
         value={user.email}
-        onChange={(e) => userAtom.change('email', e.target.value)}
+        onChange={(e) => userAtom.change("email", e.target.value)}
       />
     </>
   );
@@ -1020,8 +1008,55 @@ todoListAtom.addItem({
 console.log(todoListAtom.length); // 1
 ```
 
+## SSR Support
+
+> Added in V3.0.0
+
+Now atoms can lay in SSR environments like Nextjs, Remix, etc, but with a little bit of change.
+
+In your base app project, wrap your app with `AtomProvider` component.
+
+```tsx
+import { AtomProvider } from "@mongez/atom";
+
+export default function App() {
+  return (
+    <AtomProvider>
+      <App />
+    </AtomProvider>
+  );
+}
+```
+
+Then in your pages, wrap your page component with `AtomProvider` component.
+
+Now to access any atom from any component wrapped inside `AtomProvider` component, you need to use `useAtom` hook.
+
+```tsx
+import { useAtom } from "@mongez/atom";
+
+export default function Page() {
+  const userAtom = useAtom("user");
+
+  return (
+    <div>
+      <div>Value: {value}</div>
+      <button onClick={() => userAtom.change("name", "New Value")}>
+        Change Value
+      </button>
+    </div>
+  );
+}
+```
+
+The main difference here you get a `copy` of the atom by calling `useAtom`, this will ensure that on each page request, you get a new copy of the atom, and the atom will be updated only for the current request.
+
+> Do not use the original atom inside SSR apps, use `useAtom` and pass to it the atom's key.
+
 ## Change Log
 
+- V3.0.0 (25 May 2023)
+  - Add Support or SSR.
 - V2.1.0 (21 Mar 2023)
   - Added `merge` method to atom.
   - Enhanced `update` typings.
