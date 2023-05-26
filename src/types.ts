@@ -242,3 +242,22 @@ export type Atom<Value = any> = {
    */
   readonly length: number;
 };
+
+/**
+ * atom context to create an instance of Atom
+ * for every user in ssr apps
+ */
+declare type AtomContextType = {
+  [key: string]: any;
+};
+
+/**
+ * Get clone of the given atom key
+ */
+declare function useAtom<T>(key: string): T;
+
+declare const AtomContext: React.Context<AtomContextType>;
+
+declare const AtomProvider: React.FC<{ children: React.ReactNode }>;
+
+export { AtomContext, AtomProvider, useAtom };
