@@ -18,7 +18,9 @@ Redux is a powerful state management tool, the purpose of this package is to use
 - Listen to atom's value change.
 - Listen to atom's object property change.
 - Lightweight in size.
-- Has very good utilities to manage atom if it is array or object.
+- Supports Server Side Rendering.
+- Supports React Native.
+- Easy Managing Objects, Arrays, and booleans.
 
 ## Installation
 
@@ -1053,8 +1055,298 @@ The main difference here you get a `copy` of the atom by calling `useAtom`, this
 
 > Do not use the original atom inside SSR apps, use `useAtom` and pass to it the atom's key.
 
+## Boolean Atoms
+
+> Added in V3.1.0
+
+Boolean atom is a helper function that allows you to easily manage a `boolean` value which mostly used with popups, loading, etc.
+
+### Boolean Atom
+
+The `booleanAtom` function is mainly used to manage a boolean value, which mainly will be used for the `opening` state
+
+```tsx
+import { booleanAtom } from "@mongez/atom";
+
+export const loginPopupAtom = booleanAtom("loginPopup");
+```
+
+This atom exposes 4 values:
+
+- `opened`: boolean value that indicates if the popup is opened or not.
+- `open`: a function that sets the `opened` value to `true`.
+- `close`: a function that sets the `opened` value to `false`.
+- `toggle`: a function that toggles the `opened` value.
+
+By default, `opened` is set to `false`, if you want to set it to `true` by default, pass `true` as the second argument to `booleanAtom` function.
+
+```tsx
+import { booleanAtom } from "@mongez/atom";
+
+export const loginPopupAtom = booleanAtom("loginPopup", true);
+```
+
+Let's see an example of usage
+
+`LoginPopup.tsx`
+
+```tsx
+import { loginPopupAtom } from "./atoms";
+
+export default function LoginPopup() {
+  const opened = loginPopupAtom.use("opened"); // watch for opened when it is changed
+  const close = loginPopupAtom.get("close"); // use `get` not `use` function to get the function
+
+  return (
+    <Modal isOpen={opened} onClose={close}>
+      <div>Login Content Here</div>
+    </Modal>
+  );
+}
+```
+
+`Header.tsx`
+
+```tsx
+import { loginPopupAtom } from "./atoms";
+
+export default function Header() {
+  const openLoginPopup = loginPopupAtom.get("open"); // use `get` not `use` function to get the function
+
+  return (
+    <div>
+      <button onClick={openLoginPopup}>Login</button>
+    </div>
+  );
+}
+```
+
+As you can see in the above example, we used `get` function to get the `open` and `close` functions, this is because we don't want to watch for these functions, they are static functions, no changes will occur to them.
+
+The `opened` value is watched for changes, so when the popup is opened or closed, the `LoginPopup` component will be re-rendered.
+
+### Loading Atom
+
+Another good helper function is `loadingAtom` which is used to manage a loading state, this is useful when you want to show a loading indicator when a request is being made.
+
+It has 3 values:
+
+- `isLoading`: boolean value that indicates if the request is being made or not.
+- `start`: a function that sets the `isLoading` value to `true`.
+- `stop`: a function that sets the `isLoading` value to `false`.
+
+By default, `isLoading` is set to `false`, if you want to set it to `true` by default, pass `true` as the second argument to `loadingAtom` function.
+
+```tsx
+import { loadingAtom } from "@mongez/atom";
+
+export const loadingPostsAtom = loadingAtom("loadingPosts", true);
+```
+
+Let's see an example of usage
+
+`Posts.tsx`
+
+```tsx
+import { loadingPostsAtom } from "./atoms";
+import { useEffect, useState } from "react";
+import { loadPosts } from "./api";
+
+export default function Posts() {
+  const [posts, setPosts] = useState([]);
+  const isLoading = loadingPostsAtom.use("isLoading"); // watch for isLoading when it is changed
+  const startLoading = loadingPostsAtom.get("start"); // use `get` not `use` function to get the function
+  const stopLoading = loadingPostsAtom.get("stop"); // use `get` not `use` function to get the function
+
+  useEffect(() => {
+    startLoading();
+    loadPosts().then((response) => {
+      stopLoading();
+      setPosts(response.data.posts);
+    });
+  }, []);
+
+  return (
+    <div>
+      {isLoading && <div>Loading...</div>}
+      {posts.map((post) => (
+        <div>{post.title}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+### Fetching Atom
+
+This helper atom is quiet good actually, it allows you to manage an API fetching, consider it a full atom that manages the loading state, the data, and the error.
+
+It exposes `8` values:
+
+- `isLoading`: boolean value that indicates if the request is being made or not, default value is `false`.
+- `startLoading`: a function that sets the `isLoading` value to `true`.
+- `stopLoading`: a function that sets the `isLoading` value to `false`.
+- `data`: the data returned from the API, default value is `null`.
+- `error`: the error returned from the API, default value is `null`.
+- `success`: A function that sets the `data` value and sets the `isLoading` value to `false`.
+- `failed`: A function that sets the `error` value and sets the `isLoading` value to `false`.
+- `append`: A function that works only if data is `array`, it appends the new data to the existing data.
+- `prepend`: A function that works only if data is `array`, it prepends the new data to the existing data.
+
+Let's use the previous example of posts but this time with `fetchingAtom`
+
+`src/atoms/posts-atom.ts`
+
+```ts
+import { fetchingAtom } from "@mongez/atom";
+
+export const postsAtom = fetchingAtom("posts");
+```
+
+Our atom is ready to be used, let's use it in our `Posts` component
+
+`src/components/Posts.tsx`
+
+```tsx
+import { postsAtom } from "../atoms/posts-atom";
+import { useEffect } from "react";
+
+export default function Posts() {
+  const { startLoading, success, failed } = postsAtom.value;
+  const isLoading = postsAtom.use("isLoading"); // watch for isLoading when it is changed
+  const data = postsAtom.use("data"); // watch for data when it is changed
+  const error = postsAtom.use("error"); // watch for error when it is changed
+
+  useEffect(() => {
+    startLoading();
+    loadPosts()
+      .then((response) => {
+        success(response.data.posts);
+      })
+      .catch((error) => {
+        failed(error);
+      });
+  }, []);
+
+  return (
+    <div>
+      {isLoading && <div>Loading...</div>}
+      {data && data.map((post) => <div>{post.title}</div>)}
+      {error && <div>{error.message}</div>}
+    </div>
+  );
+}
+```
+
+This example uses all the values exposed by `fetchingAtom`, but you can use only the values you need.
+
+## Best Practices With Atoms
+
+Atoms have two main objectives, a triggering atom update and a listening for changes, so it is always better to separate any component that is going to be only the updating component from the component that is going to listen for changes.
+
+In the `login` example, we have put the `loginPopup` update in the `Header` component, when user clicks on the login button, it will trigger atom update but the `Header` component is not interested in listening for changes, it is only interested in triggering the update so it will not re-render, in the meanwhile, the `LoginPopup` component is interested in listening for changes, so it will re-render when the atom is updated.
+
+Let's put this into action, in the `fetchingAtom` example, we used triggering and listening values in the same component, let's separate them.
+
+`src/components/Posts.tsx`
+
+```tsx
+import { postsAtom } from "../atoms/posts-atom";
+import { useEffect } from "react";
+import LoadingPosts from "./LoadingPosts";
+import PostsList from "./PostsList";
+import PostsError from "./PostsError";
+
+export default function Posts() {
+  const { startLoading, success, failed } = postsAtom.value;
+
+  useEffect(() => {
+    startLoading();
+    loadPosts()
+      .then((response) => {
+        success(response.data.posts);
+      })
+      .catch((error) => {
+        failed(error);
+      });
+  }, []);
+
+  return (
+    <div>
+      <LoadingPosts />
+      <PostsList />
+      <PostsError />
+    </div>
+  );
+}
+```
+
+Now we have separated the triggering component from the listening components, this will make the `Posts` component only responsible for triggering the atom update, and the `LoadingPosts`, `PostsList` and `PostsError` components are only responsible for listening for changes.
+
+Let's create these components
+
+`src/components/LoadingPosts.tsx`
+
+```tsx
+import { postsAtom } from "../atoms/posts-atom";
+
+export default function LoadingPosts() {
+  const isLoading = postsAtom.use("isLoading"); // watch for isLoading when it is changed
+
+  if (!isLoading) {
+    return null;
+  }
+
+  return <div>Loading...</div>;
+}
+```
+
+`src/components/PostsList.tsx`
+
+```tsx
+import { postsAtom } from "../atoms/posts-atom";
+
+export default function PostsList() {
+  const data = postsAtom.use("data"); // watch for data when it is changed
+
+  if (!data) {
+    return null;
+  }
+
+  return (
+    <div>
+      {data.map((post) => (
+        <div>{post.title}</div>
+      ))}
+    </div>
+  );
+}
+```
+
+`src/components/PostsError.tsx`
+
+```tsx
+import { postsAtom } from "../atoms/posts-atom";
+
+export default function PostsError() {
+  const error = postsAtom.use("error"); // watch for error when it is changed
+
+  if (!error) {
+    return null;
+  }
+
+  return <div>{error.message}</div>;
+}
+```
+
+Using this approach, `Posts` component will not re-render when the atom is updated, this will make it render only once, each other component will be rendered for first time, then based on the atom changes, each component will start interacting.
+
+For example the `LoadingPosts` component will be rendered for first time, then when calling `startLoading` method, it will re-render again, but the `Posts` component will not re-render because it is not listening for `isLoading` changes.
+
 ## Change Log
 
+- V3.1.0 (24 Jun 2023)
+  - Added `booleanAtom`, `loadingAtom` and `fetchingAtom`, functions.
 - V3.0.0 (25 May 2023)
   - Add Support or SSR.
 - V2.1.0 (21 Mar 2023)
@@ -1120,3 +1412,7 @@ The main difference here you get a `copy` of the atom by calling `useAtom`, this
   - Added useAtomWatch Hook.
 - V1.1.0 (25 Apr 2022)
   - Added [beforeUpdate](#value-mutation-before-update) function.
+
+```
+
+```
