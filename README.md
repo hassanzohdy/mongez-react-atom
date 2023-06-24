@@ -1055,11 +1055,11 @@ The main difference here you get a `copy` of the atom by calling `useAtom`, this
 
 > Do not use the original atom inside SSR apps, use `useAtom` and pass to it the atom's key.
 
-## Boolean Atoms
+## Helper Atoms
 
 > Added in V3.1.0
 
-Boolean atom is a helper function that allows you to easily manage a `boolean` value which mostly used with popups, loading, etc.
+Helper atoms functions allow you to easily manage `variant` atoms that you would probably use in your app.
 
 ### Boolean Atom
 
