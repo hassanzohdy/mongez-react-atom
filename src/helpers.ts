@@ -75,6 +75,10 @@ export type FetchingAtomType = {
    */
   data: any;
   /**
+   * Pagination data
+   */
+  pagination?: any;
+  /**
    * Fetching error
    */
   error: any;
@@ -120,22 +124,25 @@ export function fetchingAtom(key: string, defaultFetching = false) {
       stopLoading() {
         atomHandler.change("isLoading", false);
       },
-      success(data) {
+      success(data, pagination = null) {
         atomHandler.merge({
           isLoading: false,
           data,
+          pagination,
         });
       },
-      append(data) {
+      append(data, pagination = null) {
         atomHandler.merge({
           isLoading: false,
           data: [...atomHandler.value.data, ...data],
+          pagination,
         });
       },
-      prepend(data) {
+      prepend(data, pagination = null) {
         atomHandler.merge({
           isLoading: false,
           data: [...data, ...atomHandler.value.data],
+          pagination,
         });
       },
       failed(error) {

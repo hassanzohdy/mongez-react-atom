@@ -1187,6 +1187,7 @@ It exposes `8` values:
 - `startLoading`: a function that sets the `isLoading` value to `true`.
 - `stopLoading`: a function that sets the `isLoading` value to `false`.
 - `data`: the data returned from the API, default value is `null`.
+- `pagination`: the pagination returned from the API, default value is `null`.
 - `error`: the error returned from the API, default value is `null`.
 - `success`: A function that sets the `data` value and sets the `isLoading` value to `false`.
 - `failed`: A function that sets the `error` value and sets the `isLoading` value to `false`.
@@ -1221,7 +1222,7 @@ export default function Posts() {
     startLoading();
     loadPosts()
       .then((response) => {
-        success(response.data.posts);
+        success(response.data.posts, response.data.pagination);
       })
       .catch((error) => {
         failed(error);
