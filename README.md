@@ -1177,6 +1177,35 @@ export default function Posts() {
 }
 ```
 
+Alternatively, you can directly call `start` and `stop` functions from the atom itself, without using `get` function.
+
+```tsx
+import { loadingPostsAtom } from "./atoms";
+import { useEffect, useState } from "react";
+
+export default function Posts() {
+  const [posts, setPosts] = useState([]);
+  const isLoading = loadingPostsAtom.use("isLoading"); // watch for isLoading when it is changed
+
+  useEffect(() => {
+    loadingPostsAtom.start();
+    loadPosts().then((response) => {
+      loadingPostsAtom.stop();
+      setPosts(response.data.posts);
+    });
+  }, []);
+
+  return (
+    <div>
+      {isLoading && <div>Loading...</div>}
+      {posts.map((post) => (
+        <div>{post.title}</div>
+      ))}
+    </div>
+  );
+}
+```
+
 ### Fetching Atom
 
 This helper atom is quiet good actually, it allows you to manage an API fetching, consider it a full atom that manages the loading state, the data, and the error.
@@ -1201,7 +1230,13 @@ Let's use the previous example of posts but this time with `fetchingAtom`
 ```ts
 import { fetchingAtom } from "@mongez/atom";
 
-export const postsAtom = fetchingAtom("posts");
+export type Post = {
+  id: number;
+  title: string;
+  body: string;
+};
+// define the post type as an array for better type checking
+export const postsAtom = fetchingAtom<Post[]>("posts");
 ```
 
 Our atom is ready to be used, let's use it in our `Posts` component
@@ -1240,6 +1275,39 @@ export default function Posts() {
 ```
 
 This example uses all the values exposed by `fetchingAtom`, but you can use only the values you need.
+
+If you're lazy enough, you can directly access all `functions` from the atom directly like this:
+
+```tsx
+import { postsAtom } from "../atoms/posts-atom";
+import { useEffect } from "react";
+
+export default function Posts() {
+  useEffect(() => {
+    postsAtom.startLoading();
+    loadPosts()
+      .then((response) => {
+        postsAtom.success(response.data.posts, response.data.pagination);
+      })
+      .catch((error) => {
+        postsAtom.failed(error);
+      });
+  }, []);
+
+  return (
+    <div>
+      {postsAtom.use("isLoading") && <div>Loading...</div>}
+      {postsAtom.use("data") &&
+        postsAtom.use("data").map((post) => <div>{post.title}</div>)}
+      {postsAtom.use("error") && (
+        <div>{postsAtom.use("error").message}</div>
+      )}
+    </div>
+  );
+}
+```
+
+> Please note that this feature works only with fetching atom.
 
 ## Best Practices With Atoms
 
