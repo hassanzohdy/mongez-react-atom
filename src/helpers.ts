@@ -1,21 +1,35 @@
 import { atom } from "./atom";
 import { Atom } from "./types";
 
-/**
- * Boolean atom type
- */
-export type BooleanAtomType = {
-  opened: boolean;
+export type OpenAtomActions = {
+  /**
+   * Toggle open state
+   */
   toggle: () => void;
+  /**
+   * Mark as opened
+   */
   open: () => void;
+  /**
+   * Mark as closed
+   */
   close: () => void;
 };
 
 /**
+ * Open atom type
+ */
+export type OpenAtomType = {
+  opened: boolean;
+} & OpenAtomActions;
+
+export type OpenAtom = Atom & OpenAtomActions;
+
+/**
  * Create a boolean atom
  */
-export function booleanAtom(key: string, defaultOpened = false) {
-  const atomHandler = atom<BooleanAtomType>({
+export function openAtom(key: string, defaultOpened = false) {
+  const atomHandler = atom<OpenAtomType>({
     key,
     default: {
       opened: defaultOpened,
@@ -29,30 +43,38 @@ export function booleanAtom(key: string, defaultOpened = false) {
         atomHandler.change("opened", false);
       },
     },
-  });
+  }) as OpenAtom;
+
+  atomHandler.open = atomHandler.value.open;
+  atomHandler.close = atomHandler.value.close;
+  atomHandler.toggle = atomHandler.value.toggle;
 
   return atomHandler;
 }
+
+export type LoadingAtomActions = {
+  /**
+   * Start loading
+   */
+  startLoading: () => void;
+  /**
+   * Stop loading
+   */
+  stopLoading: () => void;
+  /**
+   * Toggle loading
+   */
+  toggleLoading: () => void;
+};
 
 /**
  * Loading atom type
  */
 export type LoadingAtomType = {
   isLoading: boolean;
-  start: () => void;
-  stop: () => void;
-};
+} & LoadingAtomActions;
 
-export type LoadingAtom = Atom<LoadingAtomType> & {
-  /**
-   * Start loading
-   */
-  start: () => void;
-  /**
-   * Stop loading
-   */
-  stop: () => void;
-};
+export type LoadingAtom = Atom<LoadingAtomType> & LoadingAtomActions;
 
 /**
  * Create a loading atom
@@ -62,14 +84,21 @@ export function loadingAtom(key: string, defaultLoading = false) {
     key,
     default: {
       isLoading: defaultLoading,
-      start() {
+      startLoading() {
         atomHandler.change("isLoading", true);
       },
-      stop() {
+      stopLoading() {
         atomHandler.change("isLoading", false);
+      },
+      toggleLoading() {
+        atomHandler.change("isLoading", !atomHandler.value.isLoading);
       },
     },
   }) as LoadingAtom;
+
+  atomHandler.startLoading = atomHandler.value.startLoading;
+  atomHandler.stopLoading = atomHandler.value.stopLoading;
+  atomHandler.toggleLoading = atomHandler.value.toggleLoading;
 
   return atomHandler;
 }

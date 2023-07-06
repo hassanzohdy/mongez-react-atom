@@ -1061,14 +1061,14 @@ The main difference here you get a `copy` of the atom by calling `useAtom`, this
 
 Helper atoms functions allow you to easily manage `variant` atoms that you would probably use in your app.
 
-### Boolean Atom
+### Open Atom
 
-The `booleanAtom` function is mainly used to manage a boolean value, which mainly will be used for the `opening` state
+The `openAtom` function is mainly used to manage an open state, this one is useful when working with modals, popups, etc.
 
 ```tsx
-import { booleanAtom } from "@mongez/atom";
+import { openAtom } from "@mongez/atom";
 
-export const loginPopupAtom = booleanAtom("loginPopup");
+export const loginPopupAtom = openAtom("openAtom");
 ```
 
 This atom exposes 4 values:
@@ -1081,9 +1081,9 @@ This atom exposes 4 values:
 By default, `opened` is set to `false`, if you want to set it to `true` by default, pass `true` as the second argument to `booleanAtom` function.
 
 ```tsx
-import { booleanAtom } from "@mongez/atom";
+import { openAtom } from "@mongez/atom";
 
-export const loginPopupAtom = booleanAtom("loginPopup", true);
+export const loginPopupAtom = openAtom("loginPopup", true);
 ```
 
 Let's see an example of usage
@@ -1125,6 +1125,34 @@ As you can see in the above example, we used `get` function to get the `open` an
 
 The `opened` value is watched for changes, so when the popup is opened or closed, the `LoginPopup` component will be re-rendered.
 
+This works exactly like a normal atom, but, we can go more easier by using the atom actions directly, like `open`, `close` and `toggle`.
+
+```tsx
+import { loginPopupAtom } from "./atoms";
+
+export default function Header() {
+  return (
+    <div>
+      <button onClick={loginPopupAtom.open}>Login</button>
+    </div>
+  );
+}
+```
+
+So Before:
+
+```tsx
+const open = loginPopupAtom.get("open");
+```
+
+After:
+
+```tsx
+const open = loginPopupAtom.open;
+```
+
+This applies to `close` and `toggle` functions as well.
+
 ### Loading Atom
 
 Another good helper function is `loadingAtom` which is used to manage a loading state, this is useful when you want to show a loading indicator when a request is being made.
@@ -1132,8 +1160,9 @@ Another good helper function is `loadingAtom` which is used to manage a loading 
 It has 3 values:
 
 - `isLoading`: boolean value that indicates if the request is being made or not.
-- `start`: a function that sets the `isLoading` value to `true`.
-- `stop`: a function that sets the `isLoading` value to `false`.
+- `startLoading`: a function that sets the `isLoading` value to `true`.
+- `stopLoading`: a function that sets the `isLoading` value to `false`.
+- `toggleLoading`: a function that toggles the `isLoading` value.
 
 By default, `isLoading` is set to `false`, if you want to set it to `true` by default, pass `true` as the second argument to `loadingAtom` function.
 
@@ -1155,13 +1184,11 @@ import { loadPosts } from "./api";
 export default function Posts() {
   const [posts, setPosts] = useState([]);
   const isLoading = loadingPostsAtom.use("isLoading"); // watch for isLoading when it is changed
-  const startLoading = loadingPostsAtom.get("start"); // use `get` not `use` function to get the function
-  const stopLoading = loadingPostsAtom.get("stop"); // use `get` not `use` function to get the function
 
   useEffect(() => {
-    startLoading();
+    loadingPostsAtom.startLoading();
     loadPosts().then((response) => {
-      stopLoading();
+      loadingPostsAtom.stopLoading();
       setPosts(response.data.posts);
     });
   }, []);
@@ -1177,34 +1204,7 @@ export default function Posts() {
 }
 ```
 
-Alternatively, you can directly call `start` and `stop` functions from the atom itself, without using `get` function.
-
-```tsx
-import { loadingPostsAtom } from "./atoms";
-import { useEffect, useState } from "react";
-
-export default function Posts() {
-  const [posts, setPosts] = useState([]);
-  const isLoading = loadingPostsAtom.use("isLoading"); // watch for isLoading when it is changed
-
-  useEffect(() => {
-    loadingPostsAtom.start();
-    loadPosts().then((response) => {
-      loadingPostsAtom.stop();
-      setPosts(response.data.posts);
-    });
-  }, []);
-
-  return (
-    <div>
-      {isLoading && <div>Loading...</div>}
-      {posts.map((post) => (
-        <div>{post.title}</div>
-      ))}
-    </div>
-  );
-}
-```
+> The `loadingAtom` has same functions as `openAtom`, but instead of `open`, `close` and `toggle`, it has `startLoading`, `stopLoading` and `toggleLoading`.
 
 ### Fetching Atom
 
@@ -1248,41 +1248,10 @@ import { postsAtom } from "../atoms/posts-atom";
 import { useEffect } from "react";
 
 export default function Posts() {
-  const { startLoading, success, failed } = postsAtom.value;
   const isLoading = postsAtom.use("isLoading"); // watch for isLoading when it is changed
   const data = postsAtom.use("data"); // watch for data when it is changed
   const error = postsAtom.use("error"); // watch for error when it is changed
 
-  useEffect(() => {
-    startLoading();
-    loadPosts()
-      .then((response) => {
-        success(response.data.posts, response.data.pagination);
-      })
-      .catch((error) => {
-        failed(error);
-      });
-  }, []);
-
-  return (
-    <div>
-      {isLoading && <div>Loading...</div>}
-      {data && data.map((post) => <div>{post.title}</div>)}
-      {error && <div>{error.message}</div>}
-    </div>
-  );
-}
-```
-
-This example uses all the values exposed by `fetchingAtom`, but you can use only the values you need.
-
-If you're lazy enough, you can directly access all `functions` from the atom directly like this:
-
-```tsx
-import { postsAtom } from "../atoms/posts-atom";
-import { useEffect } from "react";
-
-export default function Posts() {
   useEffect(() => {
     postsAtom.startLoading();
     loadPosts()
@@ -1296,18 +1265,15 @@ export default function Posts() {
 
   return (
     <div>
-      {postsAtom.use("isLoading") && <div>Loading...</div>}
-      {postsAtom.use("data") &&
-        postsAtom.use("data").map((post) => <div>{post.title}</div>)}
-      {postsAtom.use("error") && (
-        <div>{postsAtom.use("error").message}</div>
-      )}
+      {isLoading && <div>Loading...</div>}
+      {data && data.map((post) => <div>{post.title}</div>)}
+      {error && <div>{error.message}</div>}
     </div>
   );
 }
 ```
 
-> Please note that this feature works only with fetching atom.
+Again, the exposed functions are used only with the helper atoms, like `fetchingAtom`, `loadingAtom` and `openAtom`.
 
 ## Best Practices With Atoms
 
@@ -1327,16 +1293,14 @@ import PostsList from "./PostsList";
 import PostsError from "./PostsError";
 
 export default function Posts() {
-  const { startLoading, success, failed } = postsAtom.value;
-
   useEffect(() => {
-    startLoading();
+    postsAtom.startLoading();
     loadPosts()
       .then((response) => {
-        success(response.data.posts);
+        postsAtom.success(response.data.posts);
       })
       .catch((error) => {
-        failed(error);
+        postsAtom.failed(error);
       });
   }, []);
 
@@ -1415,7 +1379,7 @@ For example the `LoadingPosts` component will be rendered for first time, then w
 ## Change Log
 
 - V3.1.0 (24 Jun 2023)
-  - Added `booleanAtom`, `loadingAtom` and `fetchingAtom`, functions.
+  - Added `openAtom`, `loadingAtom` and `fetchingAtom`, functions.
 - V3.0.0 (25 May 2023)
   - Add Support or SSR.
 - V2.1.0 (21 Mar 2023)
