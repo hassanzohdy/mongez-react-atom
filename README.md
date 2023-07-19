@@ -412,6 +412,21 @@ export default function User() {
 
 Now when the `name` property is changed, this component will be rerendered automatically, otherwise it won't.
 
+## On Atom Reset
+
+To listen to atom when it is reset, use `onReset` method.
+
+```ts
+// anywhere in your app
+import { currencyAtom } from "~/src/atoms";
+
+currencyAtom.onReset((atom) => {
+  //
+});
+```
+
+> This will be triggered after the update event is triggered
+
 ## Use
 
 Using `atom.use` will merge both `useValue` and `useWatcher` methods into one.

@@ -211,6 +211,9 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
     ): EventSubscription {
       return events.subscribe(event("update"), callback);
     },
+    onReset(callback: (atom: Atom<Value>) => void): EventSubscription {
+      return events.subscribe(event("reset"), callback);
+    },
     get<T extends keyof Value>(key: T, defaultValue?: any): Value[T] {
       if (data.get) {
         return data.get(key as string, defaultValue, this.currentValue);
@@ -236,7 +239,10 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
       return events.subscribe(`atoms.${this.key}.delete`, callback);
     },
     reset() {
-      return this.update(this.defaultValue);
+      const update = this.update(this.defaultValue);
+      events.trigger(event("reset"), this);
+
+      return update;
     },
   };
 
