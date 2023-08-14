@@ -244,6 +244,16 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
 
       return update;
     },
+    /**
+     * Reset the value without triggering the update event
+     * But this will trigger the reset event
+     */
+    shadowReset() {
+      this.currentValue = clone(this.defaultValue);
+      events.trigger(event("reset"), this);
+
+      return this;
+    },
   };
 
   if (data.onUpdate) {

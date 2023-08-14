@@ -583,6 +583,35 @@ currencyAtom.reset(); // any component using the atom will be rerendered automat
 
 This will trigger an atom update and set the atom's value to its default value.
 
+## Shadow Reset Value (Reset without triggering change event)
+
+> Added in v3.2.0
+
+Sometimes its useful to reset the atom's value to its default value without triggering the change event, this can be achieved using `shadowReset` method, a good sue case for this is when a component is unmounted and you want to reset the atom's value to its default value without triggering the change event.
+
+```tsx
+// Header.tsx
+import { currencyAtom } from "~/src/atoms";
+import { useEffect } from "react";
+
+export default function Header() {
+  const currency = currencyAtom.useValue();
+
+  useEffect(() => {
+    return () => currencyAtom.shadowReset();
+  }, []);
+
+  return (
+    <>
+      <h1>Header</h1>
+      Currency: {currency}
+    </>
+  );
+}
+```
+
+This will not trigger the value change event, but it will reset the atom's value to its default value and **the reset event will be triggered though**
+
 ## Destroy atom
 
 We can also destroy the atom using `destroy()` method from the atom, this will stop re-rendering any component that using the atom using `useAtom` or `useAtomState` hooks.

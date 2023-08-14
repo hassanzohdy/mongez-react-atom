@@ -70,6 +70,11 @@ export type Atom<Value = any> = {
   reset: () => void;
 
   /**
+   * Reset the atom without triggering the update event
+   */
+  shadowReset: () => void;
+
+  /**
    * Update atom value, the function accepts a new value,
    * or it can accept a callback that passes the old value and the atom instance
    * This will trigger atom event update
