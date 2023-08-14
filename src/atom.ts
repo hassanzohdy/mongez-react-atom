@@ -206,6 +206,23 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
         }
       }
     },
+    silentUpdate(
+      newValue: ((oldValue: Value, atom: Atom<Value>) => Value) | Value
+    ) {
+      if (newValue === this.currentValue) return;
+
+      const oldValue = this.currentValue;
+
+      if (typeof newValue === "function") {
+        newValue = (newValue as any)(oldValue, this);
+      }
+
+      if (data.beforeUpdate) {
+        newValue = data.beforeUpdate(newValue as Value, oldValue, this);
+      }
+
+      this.currentValue = newValue;
+    },
     onChange(
       callback: (newValue: Value, oldValue: Value, atom: Atom<Value>) => void
     ): EventSubscription {
@@ -248,7 +265,7 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
      * Reset the value without triggering the update event
      * But this will trigger the reset event
      */
-    shadowReset() {
+    silentReset() {
       this.currentValue = clone(this.defaultValue);
       events.trigger(event("reset"), this);
 

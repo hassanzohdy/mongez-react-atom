@@ -72,7 +72,7 @@ export type Atom<Value = any> = {
   /**
    * Reset the atom without triggering the update event
    */
-  shadowReset: () => void;
+  silentReset: () => void;
 
   /**
    * Update atom value, the function accepts a new value,
@@ -80,6 +80,13 @@ export type Atom<Value = any> = {
    * This will trigger atom event update
    */
   update: (
+    value: ((oldValue: Value, atom: Atom<Value>) => Value) | Value
+  ) => void;
+
+  /**
+   * Update atom value without triggering the update event
+   */
+  silentUpdate: (
     value: ((oldValue: Value, atom: Atom<Value>) => Value) | Value
   ) => void;
 

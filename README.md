@@ -244,6 +244,19 @@ userAtom.update((oldValue) => {
 });
 ```
 
+## Silent Update (Update without triggering change event)
+
+> Added in v3.2.0
+
+Works exactly like `update` method, but it will not trigger the change event.
+
+```ts
+// anywhere in your app
+import { currencyAtom } from "~/src/atoms";
+
+currencyAtom.silentUpdate("USD"); // any component using the atom will be rerendered automatically.
+```
+
 ## Merge atom's value
 
 > Added in v2.1.0
@@ -583,11 +596,11 @@ currencyAtom.reset(); // any component using the atom will be rerendered automat
 
 This will trigger an atom update and set the atom's value to its default value.
 
-## Shadow Reset Value (Reset without triggering change event)
+## Silent Reset Value (Reset without triggering change event)
 
 > Added in v3.2.0
 
-Sometimes its useful to reset the atom's value to its default value without triggering the change event, this can be achieved using `shadowReset` method, a good sue case for this is when a component is unmounted and you want to reset the atom's value to its default value without triggering the change event.
+Sometimes its useful to reset the atom's value to its default value without triggering the change event, this can be achieved using `silentReset` method, a good sue case for this is when a component is unmounted and you want to reset the atom's value to its default value without triggering the change event.
 
 ```tsx
 // Header.tsx
@@ -598,7 +611,7 @@ export default function Header() {
   const currency = currencyAtom.useValue();
 
   useEffect(() => {
-    return () => currencyAtom.shadowReset();
+    return () => currencyAtom.silentReset();
   }, []);
 
   return (
