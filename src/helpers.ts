@@ -23,7 +23,7 @@ export type OpenAtomType = {
   opened: boolean;
 } & OpenAtomActions;
 
-export type OpenAtom = Atom & OpenAtomActions;
+export type OpenAtom = Atom<OpenAtomType> & OpenAtomActions;
 
 /**
  * Create a boolean atom
