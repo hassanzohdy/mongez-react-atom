@@ -3,7 +3,7 @@ import { EventSubscription } from "@mongez/events";
 export type AtomPartialChangeCallback = (
   newValue: any,
   oldValue: any,
-  atom: Atom<any>
+  atom: Atom<any>,
 ) => void;
 
 export type AtomValue<Value> = Value;
@@ -26,7 +26,7 @@ export type AtomOptions<Value = any> = {
   beforeUpdate?: (
     newValue: Value,
     oldValue: Value,
-    atom: Atom<AtomValue<Value>>
+    atom: Atom<AtomValue<Value>>,
   ) => Value;
   /**
    * Triggered when atom is updated
@@ -41,7 +41,7 @@ export type AtomOptions<Value = any> = {
 export type AtomChangeCallback = (
   newValue: any,
   oldValue: any,
-  atom: Atom<any>
+  atom: Atom<any>,
 ) => void;
 
 /**
@@ -80,14 +80,14 @@ export type Atom<Value = any> = {
    * This will trigger atom event update
    */
   update: (
-    value: ((oldValue: Value, atom: Atom<Value>) => Value) | Value
+    value: ((oldValue: Value, atom: Atom<Value>) => Value) | Value,
   ) => void;
 
   /**
    * Update atom value without triggering the update event
    */
   silentUpdate: (
-    value: ((oldValue: Value, atom: Atom<Value>) => Value) | Value
+    value: ((oldValue: Value, atom: Atom<Value>) => Value) | Value,
   ) => void;
 
   /**
@@ -130,13 +130,18 @@ export type Atom<Value = any> = {
   onDestroy(callback: (atom: Atom<Value>) => void): EventSubscription;
 
   /**
+   * Called when reset is called
+   */
+  onReset(callback: (atom: Atom<Value>) => void): EventSubscription;
+
+  /**
    * Watch for atom value change
    * This can be used only when atom's default value is an object or an array
    * The key accepts dot.notation syntax
    */
   watch: <T extends keyof Value>(
     key: T,
-    callback: AtomPartialChangeCallback
+    callback: AtomPartialChangeCallback,
   ) => EventSubscription;
 
   /**
@@ -157,13 +162,6 @@ export type Atom<Value = any> = {
   useValue: () => Value;
 
   /**
-   * An alias for useAtomWatch but specific for this atom
-   *
-   * @deprecated use `use` instead
-   */
-  useWatcher<T extends keyof Value>(key: T): Value[T];
-
-  /**
    * Use state for atom value
    *
    * This will return an array with the first item is the atom's value
@@ -177,7 +175,7 @@ export type Atom<Value = any> = {
    */
   useWatch: <T extends keyof Value>(
     key: T,
-    callback: AtomPartialChangeCallback
+    callback: AtomPartialChangeCallback,
   ) => void;
 
   /**
@@ -187,7 +185,7 @@ export type Atom<Value = any> = {
    * This will trigger the atom event change
    */
   removeItem: (
-    indexOrCallback: number | ((item: any, itemIndex: number) => boolean)
+    indexOrCallback: number | ((item: any, itemIndex: number) => boolean),
   ) => void;
 
   /**
@@ -197,7 +195,7 @@ export type Atom<Value = any> = {
    * This will trigger the atom event change
    */
   removeItems: (
-    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean)
+    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean),
   ) => void;
 
   /**
@@ -214,7 +212,7 @@ export type Atom<Value = any> = {
    * Works only if atom's value is an array
    */
   getItem: (
-    indexOrCallback: number | ((item: any, index: number) => any)
+    indexOrCallback: number | ((item: any, index: number) => any),
   ) => any;
 
   /**
@@ -223,7 +221,7 @@ export type Atom<Value = any> = {
    * Works only if atom's value is an array
    */
   getItemIndex: (
-    callback: (item: any, index: number, array: any[]) => boolean
+    callback: (item: any, index: number, array: any[]) => boolean,
   ) => number;
 
   /**
@@ -241,6 +239,14 @@ export type Atom<Value = any> = {
    * This will trigger the atom event change
    */
   map: (callback: (item: any, index: number, array: any[]) => any) => void;
+
+  /**
+   * Clone the atom
+   * This will return a new atom but the key will be suffixed with Clone{Number}
+   * i.e atom name is: user5122
+   * cloned atom name will be: userClone
+   */
+  clone: () => Atom<Value>;
 
   /**
    * Get the atom's value type

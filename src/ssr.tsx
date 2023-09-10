@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useState } from "react";
 import { atomsObject } from "./atom";
 import { Atom } from "./types";
 
@@ -13,10 +13,27 @@ export function useAtom<T = any>(key: string): Atom<T> {
   return context[key];
 }
 
-export function AtomProvider({ children }: { children: React.ReactNode }) {
+export function AtomProvider({
+  register: _register,
+  children,
+}: {
+  register: Atom<any>[];
+  children: React.ReactNode;
+}) {
+  const [currentAtoms] = useState(() => {
+    const atoms = atomsObject();
+
+    for (const key in atoms) {
+      const atom = atoms[key];
+
+      const newAtom = atom.clone();
+
+      atoms[key] = newAtom;
+    }
+
+    return atoms;
+  });
   return (
-    <AtomContext.Provider value={atomsObject()}>
-      {children}
-    </AtomContext.Provider>
+    <AtomContext.Provider value={currentAtoms}>{children}</AtomContext.Provider>
   );
 }

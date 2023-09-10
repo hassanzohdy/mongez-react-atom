@@ -70,7 +70,7 @@ import React from "react";
 import { currencyAtom } from "~/src/atoms";
 
 export default function Header() {
-  const currency = currencyAtom.use();
+  const currency = currencyAtom.useValue();
 
   return (
     <>
@@ -89,7 +89,7 @@ import { useAtom } from "@mongez/react-atom";
 import { currencyAtom } from "~/src/atoms";
 
 export default function Footer() {
-  const currency = currencyAtom.use();
+  const currency = currencyAtom.useValue();
 
   return (
     <>
@@ -490,15 +490,13 @@ type User = {
 import userAtom from "./userAtom";
 
 export function Header() {
-  const user = userAtom.use();
+  const user = userAtom.useValue();
 
   return <header>{user.notifications}</header>;
 }
 ```
 
 This will be rerendered when the entire atom's value changes.
-
-From `V1.6.0` types are enhanced, when you pass the `type` to the atom, then the `use` method will return the same type, also it will allow only properties that are defined in the type.
 
 ```tsx
 type User = {
@@ -660,7 +658,7 @@ console.log(atomsList()); // [currencyAtom, ...]
 
 ## get handler function
 
-Sometimes we may need to handle the `atom.get` function to get the data in customized way, we can achieve this by defining in the atom function call how the atom will retrieve the object's value.
+Sometimes we may need to handle the `atom.get` function to get the data in a customized way, we can achieve this by defining in the atom function call how the atom will retrieve the object's value.
 
 Without Defining the `atom getter`
 
@@ -1112,6 +1110,24 @@ The main difference here you get a `copy` of the atom by calling `useAtom`, this
 
 > Do not use the original atom inside SSR apps, use `useAtom` and pass to it the atom's key.
 
+You can also register atoms in the provider using `register` prop, it receives an array of atoms
+
+```tsx
+import { AtomProvider } from "@mongez/atom";
+import currentAtom from "./currentAtom";
+import userAtom from "./userAtom";
+
+export default function App() {
+  return (
+    <AtomProvider register={[currentAtom, userAtom]}>
+      <App />
+    </AtomProvider>
+  );
+}
+```
+
+Because atoms are auto registered when the atom's file is being imported `(when declaring an atom)`, this happens when the atom is being imported, but now we are using `useAtom` instead of the atom itself, thus we need to register the atom as well.
+
 ## Helper Atoms
 
 > Added in V3.1.0
@@ -1435,6 +1451,13 @@ For example the `LoadingPosts` component will be rendered for first time, then w
 
 ## Change Log
 
+## V3.3.0 (10 Sept 2023)
+
+- Added `register` prop to `AtomProvider` component.
+- Removed `useWatcher` hook.
+- `use` now accepts only the key, to get the value use `useValue` hook instead.
+- ## V3.2.0 (31 Aug 2023)
+  - Enhanced Atom Provider for clone.
 - V3.1.0 (24 Jun 2023)
   - Added `openAtom`, `loadingAtom` and `fetchingAtom`, functions.
 - V3.0.0 (25 May 2023)
