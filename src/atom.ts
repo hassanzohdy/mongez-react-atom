@@ -89,7 +89,7 @@ function createAtom<Value = any>(data: AtomOptions<AtomValue<Value>>) {
       this.update((this.value as any[]).map(callback) as Value);
     },
     get length() {
-      return (this.value as any[]).length;
+      return (this.value as any[])?.length;
     },
     replaceItem(index, item) {
       this.update([
