@@ -1,10 +1,49 @@
-import { EventSubscription } from "@mongez/events";
+import { type EventSubscription } from "@mongez/events";
+import React from "react";
 
 export type AtomPartialChangeCallback = (
   newValue: any,
   oldValue: any,
-  atom: Atom<any>,
+  atom: Atom<any>
 ) => void;
+
+export type ReactAtom<Value = any> = Atom<Value> & {
+  /**
+   * Return the value of atom or just key of it
+   */
+  use<T extends keyof Value>(key: T): Value[T];
+
+  /**
+   * React atom provider
+   */
+  Provider: React.ComponentType<{
+    value: Partial<Value>;
+    children: React.ReactNode;
+  }>;
+
+  /**
+   * Watch for atom's value change and return it
+   * When the atom's value is changed, the component will be rerendered again.
+   */
+  useValue: () => Value;
+
+  /**
+   * Use state for atom value
+   *
+   * This will return an array with the first item is the atom's value
+   * and the second item is a function to update the atom's value
+   * As it will cause a re-render once the atoms'value is updated
+   */
+  useState: () => [Value, (value: Value) => void];
+
+  /**
+   * An alias for useAtomWatch but specific for this atom
+   */
+  useWatch: <T extends keyof Value>(
+    key: T,
+    callback: AtomPartialChangeCallback
+  ) => void;
+};
 
 export type AtomValue<Value> = Value;
 
@@ -26,7 +65,7 @@ export type AtomOptions<Value = any> = {
   beforeUpdate?: (
     newValue: Value,
     oldValue: Value,
-    atom: Atom<AtomValue<Value>>,
+    atom: Atom<AtomValue<Value>>
   ) => Value;
   /**
    * Triggered when atom is updated
@@ -41,7 +80,7 @@ export type AtomOptions<Value = any> = {
 export type AtomChangeCallback = (
   newValue: any,
   oldValue: any,
-  atom: Atom<any>,
+  atom: Atom<any>
 ) => void;
 
 /**
@@ -80,14 +119,14 @@ export type Atom<Value = any> = {
    * This will trigger atom event update
    */
   update: (
-    value: ((oldValue: Value, atom: Atom<Value>) => Value) | Value,
+    value: ((oldValue: Value, atom: Atom<Value>) => Value) | Value
   ) => void;
 
   /**
    * Update atom value without triggering the update event
    */
   silentUpdate: (
-    value: ((oldValue: Value, atom: Atom<Value>) => Value) | Value,
+    value: ((oldValue: Value, atom: Atom<Value>) => Value) | Value
   ) => void;
 
   /**
@@ -101,6 +140,12 @@ export type Atom<Value = any> = {
    * Works only if atom's value is an object
    */
   change: <T extends keyof Value>(key: T, newValue: any) => void;
+
+  /**
+   * Change only one key of the atom without triggering the update event
+   * Works only if atom's value is an object
+   */
+  silentChange: <T extends keyof Value>(key: T, newValue: any) => void;
 
   /**
    * Get current value
@@ -141,7 +186,7 @@ export type Atom<Value = any> = {
    */
   watch: <T extends keyof Value>(
     key: T,
-    callback: AtomPartialChangeCallback,
+    callback: AtomPartialChangeCallback
   ) => EventSubscription;
 
   /**
@@ -151,41 +196,13 @@ export type Atom<Value = any> = {
   get<T extends keyof Value>(key: T, defaultValue?: any): Value[T];
 
   /**
-   * Return the value of atom or just key of it
-   */
-  use<T extends keyof Value>(key: T): Value[T];
-
-  /**
-   * Watch for atom's value change and return it
-   * When the atom's value is changed, the component will be rerendered again.
-   */
-  useValue: () => Value;
-
-  /**
-   * Use state for atom value
-   *
-   * This will return an array with the first item is the atom's value
-   * and the second item is a function to update the atom's value
-   * As it will cause a re-render once the atoms'value is updated
-   */
-  useState: () => [Value, (value: Value) => void];
-
-  /**
-   * An alias for useAtomWatch but specific for this atom
-   */
-  useWatch: <T extends keyof Value>(
-    key: T,
-    callback: AtomPartialChangeCallback,
-  ) => void;
-
-  /**
    * Remove item by the given index or callback
    *
    * Works only if atom's value is an array
    * This will trigger the atom event change
    */
   removeItem: (
-    indexOrCallback: number | ((item: any, itemIndex: number) => boolean),
+    indexOrCallback: number | ((item: any, itemIndex: number) => boolean)
   ) => void;
 
   /**
@@ -195,7 +212,7 @@ export type Atom<Value = any> = {
    * This will trigger the atom event change
    */
   removeItems: (
-    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean),
+    indexesOrCallback: number[] | ((item: any, itemIndex: number) => boolean)
   ) => void;
 
   /**
@@ -212,7 +229,7 @@ export type Atom<Value = any> = {
    * Works only if atom's value is an array
    */
   getItem: (
-    indexOrCallback: number | ((item: any, index: number) => any),
+    indexOrCallback: number | ((item: any, index: number) => any)
   ) => any;
 
   /**
@@ -221,7 +238,7 @@ export type Atom<Value = any> = {
    * Works only if atom's value is an array
    */
   getItemIndex: (
-    callback: (item: any, index: number, array: any[]) => boolean,
+    callback: (item: any, index: number, array: any[]) => boolean
   ) => number;
 
   /**
@@ -251,7 +268,7 @@ export type Atom<Value = any> = {
   /**
    * Get the atom's value type
    */
-  readonly type;
+  readonly type: string;
 
   /**
    * Get the atom's value length

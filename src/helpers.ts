@@ -134,7 +134,7 @@ export type FetchingAtomType<DataType, PaginationType> = {
   /**
    * Mark data as fetched successfully, this will mark loading as false and set data
    */
-  success: (data: DataType, pagination) => void;
+  success: (data: DataType, pagination?: PaginationType) => void;
   /**
    * Mark data as fetched successfully, this will mark loading as false and set data
    */

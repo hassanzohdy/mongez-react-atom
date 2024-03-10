@@ -257,6 +257,19 @@ import { currencyAtom } from "~/src/atoms";
 currencyAtom.silentUpdate("USD"); // any component using the atom will be rerendered automatically.
 ```
 
+## Silent Change (Change key without triggering change event)
+
+> Added in V4.0.0
+
+Works exactly like `change` method, but it will not trigger the change event.
+
+```ts
+// anywhere in your app
+import { userAtom } from "~/src/atoms";
+
+userAtom.silentChange("name", "Ahmed");
+```
+
 ## Merge atom's value
 
 > Added in v2.1.0
@@ -1065,27 +1078,26 @@ todoListAtom.addItem({
 console.log(todoListAtom.length); // 1
 ```
 
-## SSR Support
+## AtomProvider
 
 > Added in V3.0.0
 
-Now atoms can lay in SSR environments like Nextjs, Remix, etc, but with a little bit of change.
+Atom Provider allows you to use same atom in a scoped version, this is useful when you want to deal with an atom inside an array of objects, or using the same atom in multiple components in the same page but each atom handles different data.
 
-In your base app project, wrap your app with `AtomProvider` component.
+Wrap the code that you want to use the atom inside it with `AtomProvider`, and pass the to the `register` prop
 
 ```tsx
 import { AtomProvider } from "@mongez/atom";
+import { currencyAtom } from "~/src/atoms";
 
-export default function App() {
+export default function MyComponent() {
   return (
-    <AtomProvider>
-      <App />
+    <AtomProvider register={[currencyAtom]}>
+      <ChildComponent />
     </AtomProvider>
   );
 }
 ```
-
-Then in your pages, wrap your page component with `AtomProvider` component.
 
 Now to access any atom from any component wrapped inside `AtomProvider` component, you need to use `useAtom` hook.
 
@@ -1093,7 +1105,7 @@ Now to access any atom from any component wrapped inside `AtomProvider` componen
 import { useAtom } from "@mongez/atom";
 
 export default function Page() {
-  const userAtom = useAtom("user");
+  const userAtom = useAtom("currency");
 
   return (
     <div>
@@ -1106,11 +1118,9 @@ export default function Page() {
 }
 ```
 
-The main difference here you get a `copy` of the atom by calling `useAtom`, this will ensure that on each page request, you get a new copy of the atom, and the atom will be updated only for the current request.
+The main difference here you get a `copy` of the atom by calling `useAtom`, this will ensure that data are separated from the original atom, you get a new copy of the atom.
 
-> Do not use the original atom inside SSR apps, use `useAtom` and pass to it the atom's key.
-
-You can also register atoms in the provider using `register` prop, it receives an array of atoms
+You may also register multiple atoms at once.
 
 ```tsx
 import { AtomProvider } from "@mongez/atom";
@@ -1127,6 +1137,55 @@ export default function App() {
 ```
 
 Because atoms are auto registered when the atom's file is being imported `(when declaring an atom)`, this happens when the atom is being imported, but now we are using `useAtom` instead of the atom itself, thus we need to register the atom as well.
+
+The argument passed to the `useAtom` hook is the atom name.
+
+## SSR Support
+
+> Added in V4.0.0
+
+Now atoms can lay in SSR environments like Nextjs, Remix, etc, but with a little bit of change.
+
+To make sure that the atom's value is being updated in both client and server, we need to create a special atom provider from the atom itself.
+
+```tsx
+// src/atoms/user-atom.ts
+import { atom } from "@mongez/atom";
+
+type User = {
+  name: string;
+  email: string;
+  age: number;
+  id: number;
+};
+
+const userAtom = atom<User>({
+  key: "user",
+  default: {},
+});
+
+// very important is to create the UserAtomProvider
+export const UserAtomProvider = userAtom.Provider;
+```
+
+We can not directly use `userAtom.Provider` in Nextjs as it will throw an error of not identifying it, so we need to export it in a separate const `UserAtomProvider`.
+
+```tsx
+// src/app/page.tsx
+import { UserAtomProvider } from "~/atoms/user-atom";
+
+export default function Page() {
+  const userFromCookies = {};
+
+  return (
+    <UserAtomProvider value={userFromCookies}>
+      <OtherComponentsListHere />
+    </UserAtomProvider>
+  );
+}
+```
+
+Now you can use the `userAtom` as usual in any component, it will be updated in both client and server.
 
 ## Helper Atoms
 
