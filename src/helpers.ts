@@ -1,4 +1,4 @@
-import { atom } from "./atom";
+import { atom } from "./react-atom";
 import { Atom } from "./types";
 
 export type OpenAtomActions = {
