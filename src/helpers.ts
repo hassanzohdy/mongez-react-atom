@@ -1,5 +1,5 @@
 import { atom } from "./react-atom";
-import { Atom } from "./types";
+import { ReactAtom } from "./types";
 
 export type OpenAtomActions = {
   /**
@@ -23,7 +23,7 @@ export type OpenAtomType = {
   opened: boolean;
 } & OpenAtomActions;
 
-export type OpenAtom = Atom<OpenAtomType> & OpenAtomActions;
+export type OpenAtom = ReactAtom<OpenAtomType> & OpenAtomActions;
 
 /**
  * Create a boolean atom
@@ -74,7 +74,7 @@ export type LoadingAtomType = {
   isLoading: boolean;
 } & LoadingAtomActions;
 
-export type LoadingAtom = Atom<LoadingAtomType> & LoadingAtomActions;
+export type LoadingAtom = ReactAtom<LoadingAtomType> & LoadingAtomActions;
 
 /**
  * Create a loading atom
@@ -149,7 +149,7 @@ export type FetchingAtomType<DataType, PaginationType> = {
   prepend: (data: DataType) => void;
 };
 
-export type FetchingAtom<DataType, PaginationType> = Atom<
+export type FetchingAtom<DataType, PaginationType> = ReactAtom<
   FetchingAtomType<DataType, PaginationType>
 > & {
   /**

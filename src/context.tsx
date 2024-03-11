@@ -1,8 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState } from "react";
-import { reactAtom } from "src/atom/react-atom";
-import { atomsList, atomsObject } from "./atom";
+import { atomsList } from "./atom";
 import { Atom } from "./types";
 
 export const AtomContext = createContext({});
