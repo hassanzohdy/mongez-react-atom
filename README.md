@@ -8,7 +8,7 @@ The main purpose of the birth of this package is to work with a simple and perfo
 
 ## This can be a replacement for Redux
 
-Redux is a powerful state management tool, the purpose of this package is to use a simple state management which provides a good performance with large applications.
+Redux is a powerful state management tool, the purpose of this package is to use a simple state management that provides a good performance with large applications.
 
 ## Features
 
@@ -32,13 +32,13 @@ Or
 
 ## Atoms are unique
 
-Atoms are meant to be **unique** therefore the atom `key` can not be used in more than one atom, if other atom is being created with a previously defined atom, an error will be thrown that indicates to use another atom key.
+Atoms are meant to be **unique** therefore the atom `key` can not be used in more than one atom, if another atom is being created with a previously defined atom, an error will be thrown that indicates to use of another atom key.
 
 ## Using Atoms outside components
 
-Atoms can be accessed outside components, this is useful when you want to use the atom's value in a function or a class, or even in a service.
+Atoms can be accessed outside components, this is useful when you want to use the atom's value in a function a class, or even in a service.
 
-By embracing the idea using atoms outside components, we can easily manage the data in a single place, this can help you update or fetch the current atom's value while you're not using it inside a component.
+By embracing the idea of using atoms outside components, we can easily manage the data in a single place, this can help you update or fetch the current atom's value while you're not using it inside a component.
 
 ## Creating New Atom
 
@@ -61,7 +61,7 @@ When creating a new atom, it's recommended to pass the atom's value type as a ge
 
 ## Using Atoms in components
 
-Now the `currencyAtom` atom has only single value, from this point we can use it in anywhere in our application components or event outside components.
+Now the `currencyAtom` atom has only a single value, from this point we can use it anywhere in our application components or event outside components.
 
 `Header.tsx`
 
@@ -85,7 +85,6 @@ export default function Header() {
 
 ```tsx
 import React from "react";
-import { useAtom } from "@mongez/react-atom";
 import { currencyAtom } from "~/src/atoms";
 
 export default function Footer() {
@@ -100,7 +99,7 @@ export default function Footer() {
 }
 ```
 
-In our Header component we just display the current value of the currency, which is the default value in our atom `EUR`.
+In our Header component, we just display the current value of the currency, which is the default value in our atom `EUR`.
 
 In the `Footer` component, we also displayed the current currency in a form of a message.
 
@@ -114,7 +113,7 @@ import { useAtom } from "@mongez/react-atom";
 import { currencyAtom } from "~/src/atoms";
 
 export default function Header() {
-  const [currency, setCurrency] = currencyAtom.useState();
+  const [currency, setCurrency] = currencyAtom.useAtom();
 
   return (
     <>
@@ -171,7 +170,7 @@ export default function Header() {
 
 ## Update atom's value
 
-The basic way to update atom's value is by using `atom.update`, this method receives the new value of the atom and updates it.
+The basic way to update an atom's value is by using `atom.update`, this method receives the new value of the atom and updates it.
 
 ```ts
 // anywhere in your app
@@ -192,7 +191,7 @@ currencyAtom.update((oldValue, atom) => {
 });
 ```
 
-> Please do remember that `atom.update` must receive a new reference of the value, otherwise it will not trigger the change event, for example `atom.update({ ...user })` will trigger the change event.
+> Please do remember that `atom.update` must receive a new reference of the value, otherwise it will not trigger the change event, for example, `atom.update({ ...user })` will trigger the change event.
 
 ```ts
 // /src/atoms/user-atom.ts
@@ -229,7 +228,7 @@ userAtom.update({
 });
 ```
 
-Or using callback to get the old value:
+Or using a callback to get the old value:
 
 ```ts
 // anywhere in your app
