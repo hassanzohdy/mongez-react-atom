@@ -1149,6 +1149,8 @@ Now atoms can lay in SSR environments like Nextjs, Remix, etc, but with a little
 To make sure that the atom's value is being updated in both client and server, we need to create a special atom provider from the atom itself.
 
 ```tsx
+// it is important to add the `usa client` directive
+"use client";
 // src/atoms/user-atom.ts
 import { atom } from "@mongez/atom";
 
