@@ -1172,6 +1172,9 @@ export const UserAtomProvider = userAtom.Provider;
 
 We can not directly use `userAtom.Provider` in Nextjs as it will throw an error of not identifying it, so we need to export it in a separate const `UserAtomProvider`.
 
+> Any component that uses the atom must declare `use client` directive at the top of the file.
+
+
 ```tsx
 // src/app/page.tsx
 import { UserAtomProvider } from "~/atoms/user-atom";
