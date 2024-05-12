@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import { atom } from "./react-atom";
 import { ReactAtom } from "./types";
 
@@ -14,6 +15,10 @@ export type OpenAtomActions = {
    * Mark as closed
    */
   close: () => void;
+  /**
+   * Listen and get the opened state
+   */
+  useOpened: () => boolean;
 };
 
 /**
@@ -23,33 +28,31 @@ export type OpenAtomType = {
   opened: boolean;
 } & OpenAtomActions;
 
-export type OpenAtom = ReactAtom<OpenAtomType> & OpenAtomActions;
-
 /**
  * Create a boolean atom
  */
-export function openAtom(key: string, defaultOpened = false) {
-  const atomHandler = atom<OpenAtomType>({
+export function openAtom(
+  key: string,
+  defaultOpened = false
+): ReactAtom<boolean, OpenAtomActions> {
+  return atom<boolean, OpenAtomActions>({
     key,
-    default: {
-      opened: defaultOpened,
+    default: defaultOpened,
+    actions: {
       toggle() {
-        atomHandler.change("opened", !atomHandler.value.opened);
+        this.update(!this.currentValue);
       },
       open() {
-        atomHandler.change("opened", true);
+        this.update(true);
       },
       close() {
-        atomHandler.change("opened", false);
+        this.update(false);
+      },
+      useOpened() {
+        return this.useState()[0];
       },
     },
-  }) as OpenAtom;
-
-  atomHandler.open = atomHandler.value.open;
-  atomHandler.close = atomHandler.value.close;
-  atomHandler.toggle = atomHandler.value.toggle;
-
-  return atomHandler;
+  });
 }
 
 export type LoadingAtomActions = {
@@ -67,38 +70,27 @@ export type LoadingAtomActions = {
   toggleLoading: () => void;
 };
 
-/**
- * Loading atom type
- */
-export type LoadingAtomType = {
-  isLoading: boolean;
-} & LoadingAtomActions;
-
-export type LoadingAtom = ReactAtom<LoadingAtomType> & LoadingAtomActions;
+export type LoadingAtom = ReactAtom<LoadingAtomActions> & LoadingAtomActions;
 
 /**
  * Create a loading atom
  */
 export function loadingAtom(key: string, defaultLoading = false) {
-  const atomHandler = atom<LoadingAtomType>({
+  const atomHandler = atom<boolean, LoadingAtomActions>({
     key,
-    default: {
-      isLoading: defaultLoading,
+    default: defaultLoading,
+    actions: {
       startLoading() {
-        atomHandler.change("isLoading", true);
+        this.update(true);
       },
       stopLoading() {
-        atomHandler.change("isLoading", false);
+        this.update(false);
       },
       toggleLoading() {
-        atomHandler.change("isLoading", !atomHandler.value.isLoading);
+        this.update(!this.currentValue);
       },
     },
-  }) as LoadingAtom;
-
-  atomHandler.startLoading = atomHandler.value.startLoading;
-  atomHandler.stopLoading = atomHandler.value.stopLoading;
-  atomHandler.toggleLoading = atomHandler.value.toggleLoading;
+  });
 
   return atomHandler;
 }
@@ -123,6 +115,9 @@ export type FetchingAtomType<DataType, PaginationType> = {
    * Fetching error
    */
   error: any;
+};
+
+export type FetchingAtomActions<DataType, PaginationType> = {
   /**
    * Start loading
    */
@@ -138,7 +133,7 @@ export type FetchingAtomType<DataType, PaginationType> = {
   /**
    * Mark data as fetched successfully, this will mark loading as false and set data
    */
-  failed: (error: any) => void;
+  failed: (error: ReactNode) => void;
   /**
    * Used only with arrays, this will append data to the current data and mark loading as false
    */
@@ -147,35 +142,22 @@ export type FetchingAtomType<DataType, PaginationType> = {
    * Used only with arrays, this will prepend data to current data and mark loading as false
    */
   prepend: (data: DataType) => void;
-};
-
-export type FetchingAtom<DataType, PaginationType> = ReactAtom<
-  FetchingAtomType<DataType, PaginationType>
-> & {
   /**
-   * Start loading
+   * Get and use loading state
    */
-  startLoading: () => void;
+  useLoading: () => boolean;
   /**
-   * Stop loading
+   * Get and use data
    */
-  stopLoading: () => void;
+  useData: () => DataType | null;
   /**
-   * Mark data as fetched successfully, this will mark loading as false and set data
+   * Get and use error
    */
-  success: (data: DataType, pagination?: PaginationType) => void;
+  useError: () => ReactNode;
   /**
-   * Mark data as fetched successfully, this will mark loading as false and set data
+   * Get and use pagination
    */
-  failed: (error: any) => void;
-  /**
-   * Used only with arrays, this will append data to the current data and mark loading as false
-   */
-  append: (data: DataType, pagination?: PaginationType) => void;
-  /**
-   * Used only with arrays, this will prepend data to current data and mark loading as false
-   */
-  prepend: (data: DataType, pagination?: PaginationType) => void;
+  usePagination: () => PaginationType | undefined;
 };
 
 /**
@@ -184,63 +166,65 @@ export type FetchingAtom<DataType, PaginationType> = ReactAtom<
 export function fetchingAtom<DataType = any, PaginationType = any>(
   key: string,
   defaultValue: DataType | null = null,
-  defaultFetching = false
+  defaultFetching = true
 ) {
-  const atomHandler = atom<FetchingAtomType<DataType, PaginationType>>({
+  return atom<
+    FetchingAtomType<DataType, PaginationType>,
+    FetchingAtomActions<DataType, PaginationType>
+  >({
     key,
-    default: {
-      isLoading: defaultFetching,
-      data: defaultValue,
-      error: undefined,
-      pagination: undefined,
+    actions: {
       startLoading() {
-        atomHandler.change("isLoading", true);
+        this.change("isLoading", true);
       },
       stopLoading() {
-        atomHandler.change("isLoading", false);
+        this.change("isLoading", false);
+      },
+      useLoading() {
+        return this.use("isLoading");
+      },
+      useData() {
+        return this.use("data");
+      },
+      useError() {
+        return this.use("error");
+      },
+      usePagination() {
+        return this.use("pagination");
       },
       success(data, pagination?: PaginationType) {
-        atomHandler.merge({
+        this.merge({
           isLoading: false,
           data,
           pagination,
         });
       },
-      append(data: DataType, pagination?: PaginationType) {
-        atomHandler.merge({
+      append(data: DataType) {
+        const newData: any[] = [...(this.value.data as any), ...(data as any)];
+        this.merge({
           isLoading: false,
-          data: [
-            ...((atomHandler.value.data as any) || []),
-            ...(data as any),
-          ] as DataType,
-          pagination,
+          data: newData as DataType,
         });
       },
-      prepend(data: DataType, pagination?: PaginationType) {
-        atomHandler.merge({
+      prepend(data: DataType) {
+        const newData: any[] = [...(data as any), ...(this.value.data as any)];
+        this.merge({
           isLoading: false,
-          data: [
-            ...(data as any),
-            ...((atomHandler.value.data as any) || []),
-          ] as DataType,
-          pagination,
+          data: newData as DataType,
         });
       },
       failed(error) {
-        atomHandler.merge({
+        this.merge({
           isLoading: false,
           error,
         });
       },
     },
-  }) as FetchingAtom<DataType, PaginationType>;
-
-  atomHandler.startLoading = atomHandler.value.startLoading;
-  atomHandler.stopLoading = atomHandler.value.stopLoading;
-  atomHandler.failed = atomHandler.value.failed;
-  atomHandler.success = atomHandler.value.success;
-  atomHandler.append = atomHandler.value.append;
-  atomHandler.prepend = atomHandler.value.prepend;
-
-  return atomHandler;
+    default: {
+      isLoading: defaultFetching,
+      data: defaultValue,
+      error: undefined,
+      pagination: undefined,
+    },
+  });
 }
