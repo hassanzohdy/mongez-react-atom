@@ -2,13 +2,14 @@
 
 import { atomsList, type Atom } from "@mongez/atom";
 import React, { createContext, useContext, useState } from "react";
+import { ReactAtom } from "./types";
 
 export const AtomContext = createContext({});
 
 /**
  * Get clone of the given atom key
  */
-export function useAtom<T = any>(key: string): Atom<T> {
+export function useAtom<T = any>(key: string): ReactAtom<T> {
   const context = useContext(AtomContext) as any;
 
   return context[key];
@@ -16,10 +17,12 @@ export function useAtom<T = any>(key: string): Atom<T> {
 
 export function AtomProvider({
   register = atomsList(),
+  defaultValue,
   children,
 }: {
   register?: Atom<any>[];
   children: React.ReactNode;
+  defaultValue?: any;
 }) {
   const [currentAtoms] = useState(() => {
     const atoms = {};
@@ -28,6 +31,10 @@ export function AtomProvider({
       const newAtom = atom.clone();
 
       atoms[atom.key] = newAtom;
+
+      if (defaultValue?.[atom.key]) {
+        newAtom.silentUpdate(defaultValue[atom.key]);
+      }
     }
 
     return atoms;
