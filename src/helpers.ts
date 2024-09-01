@@ -33,7 +33,7 @@ export type OpenAtomType = {
  */
 export function openAtom(
   key: string,
-  defaultOpened = false
+  defaultOpened = false,
 ): ReactAtom<boolean, OpenAtomActions> {
   return atom<boolean, OpenAtomActions>({
     key,
@@ -49,7 +49,7 @@ export function openAtom(
         this.update(false);
       },
       useOpened() {
-        return this.useState()[0];
+        return (this as unknown as ReactAtom).useState()[0];
       },
     },
   });
@@ -166,7 +166,7 @@ export type FetchingAtomActions<DataType, PaginationType> = {
 export function fetchingAtom<DataType = any, PaginationType = any>(
   key: string,
   defaultValue: DataType | null = null,
-  defaultFetching = true
+  defaultFetching = true,
 ) {
   return atom<
     FetchingAtomType<DataType, PaginationType>,
@@ -181,16 +181,16 @@ export function fetchingAtom<DataType = any, PaginationType = any>(
         this.change("isLoading", false);
       },
       useLoading() {
-        return this.use("isLoading");
+        return (this as unknown as ReactAtom).use("isLoading");
       },
       useData() {
-        return this.use("data");
+        return (this as unknown as ReactAtom).use("data");
       },
       useError() {
-        return this.use("error");
+        return (this as unknown as ReactAtom).use("error");
       },
       usePagination() {
-        return this.use("pagination");
+        return (this as unknown as ReactAtom).use("pagination");
       },
       success(data, pagination?: PaginationType) {
         this.merge({

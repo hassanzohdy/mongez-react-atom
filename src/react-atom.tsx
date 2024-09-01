@@ -1,21 +1,20 @@
 "use client";
 /* eslint-disable react-hooks/rules-of-hooks */
-import { EventSubscription } from "@mongez/events";
-import { useEffect, useState } from "react";
-import { createAtom } from "@mongez/atom";
 import {
   type Atom,
   type AtomActions,
+  type AtomCollectionActions,
   type AtomOptions,
   type AtomValue,
-  type CollectionOptions,
   atomCollection as baseAtomCollection,
+  type CollectionOptions,
+  createAtom,
 } from "@mongez/atom";
+import { EventSubscription } from "@mongez/events";
+import { useEffect, useState } from "react";
 import type { ReactActions, ReactAtom } from "./types";
 
-function reactActions<Value, Actions>(
-  data: any
-): ReactActions<Value> & Actions {
+function reactActions<Value>(data: any): ReactActions<Value> {
   return {
     ...data.actions,
     Provider(props) {
@@ -28,7 +27,10 @@ function reactActions<Value, Actions>(
       const atom = this as unknown as Atom<Value>;
 
       useEffect(() => {
-        return atom.watch(key, callback);
+        const event = atom.watch(key, callback);
+
+        return () => event.unsubscribe();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [key, callback]);
 
       return atom.get(key);
@@ -73,16 +75,18 @@ function reactActions<Value, Actions>(
   };
 }
 
+type ReactAtomAction = ReturnType<typeof reactActions>;
+
 /**
  * Create a new atom
  */
 export function atom<
   Value = any,
-  Actions extends AtomActions<Value> = AtomActions<Value>
+  Actions extends AtomActions<Value> = AtomActions<Value>,
 >(data: AtomOptions<AtomValue<Value>>): ReactAtom<Value, Actions> {
-  return createAtom<Value, ReactActions<Value> & Actions>({
+  return createAtom<Value, any>({
     ...data,
-    actions: reactActions<Value, Actions>(data),
+    actions: reactActions<Value>(data),
   });
 }
 
@@ -91,13 +95,13 @@ export function atom<
  */
 export function atomCollection<
   Value = any,
-  Actions extends AtomActions<Value[]> = AtomActions<Value[]>
+  Actions extends AtomCollectionActions<Value> = AtomCollectionActions<Value>,
 >(options: CollectionOptions<Value>) {
   return baseAtomCollection({
     ...options,
     actions: {
       ...options.actions,
-      ...reactActions(options),
-    } as ReactActions<Value[]> & Actions,
+      ...(reactActions(options) as any),
+    } as AtomCollectionActions<Value[]> & Actions,
   });
 }

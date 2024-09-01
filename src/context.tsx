@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
 import { atomsList, type Atom } from "@mongez/atom";
+import React, { createContext, useContext, useState } from "react";
 
 export const AtomContext = createContext({});
 
@@ -22,18 +22,18 @@ export function AtomProvider({
   children: React.ReactNode;
 }) {
   const [currentAtoms] = useState(() => {
-    const atoms = register;
+    const atoms = {};
 
-    for (const key in atoms) {
-      const atom = atoms[key];
-
+    for (const atom of register) {
       const newAtom = atom.clone();
 
-      atoms[key] = newAtom;
+      atoms[atom.key] = newAtom;
     }
 
     return atoms;
   });
+
+  console.log(currentAtoms);
 
   return (
     <AtomContext.Provider value={currentAtoms}>{children}</AtomContext.Provider>
