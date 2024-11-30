@@ -371,6 +371,65 @@ Now you can use the `userAtom` as usual in any component, it will be updated in 
 
 Helper atoms functions allow you to easily manage `variant` atoms that you would probably use in your app.
 
+### Portal Atom
+
+> Added in V5.1.0
+
+The portal atom is mainly used when working with modals, drawers or any other component that requires a state management and data transfer from a component to any other component that is not in the same component.
+
+```tsx
+import { portalAtom } from "@mongez/react-atom";
+
+export const loginPortal = portalAtom("loginPopup");
+```
+
+Now let's declare the `LoginPopup` component.
+
+`LoginPopup.tsx`
+
+```tsx
+import { loginPortal } from "./atoms";
+
+export default function LoginPopup() {
+  const opened = loginPortal.useOpened();
+
+  return (
+    <Modal isOpen={opened} onClose={loginPortal.close}>
+      <div>Login Content Here</div>
+    </Modal>
+  );
+}
+```
+
+Import the `LoginPopup` in the layout component or any shared component across the app.
+
+`Layout.tsx`
+
+```tsx
+import LoginPopup from "./LoginPopup";
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <LoginPopup />
+      {children}
+    </>
+  );
+}
+```
+
+From any component, you can open the login popup using `loginPortal.open()` function, let's open it from the header component.
+
+`Header.tsx`
+
+```tsx
+import { loginPortal } from "./atoms";
+
+export default function Header() {
+  return <button onClick={loginPortal.open}>Login</button>;
+}
+```
+
 ### Open Atom
 
 The `openAtom` function is mainly used to manage an open state, this one is useful when working with modals, popups, etc.
