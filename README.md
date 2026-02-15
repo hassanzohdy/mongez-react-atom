@@ -1,187 +1,203 @@
 # Mongez React Atom
 
-A powerful state management tool for React Js.
+A powerful, React-optimized state management library built on [@mongez/atom](https://github.com/hassanzohdy/atom). Provides React hooks, SSR support, and helper atoms for common patterns.
 
-This is a React Js adapter built on [Mongez Atom](https://github.com/hassanzohdy/atom).
+## Table of Contents
 
-> Make sure to read Mongez Atom documentation first before using this package as this package is an adapter for React Js.
+- [Why React Atom?](#why-react-atom)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Architecture Overview](#architecture-overview)
+- [Core Hooks](#core-hooks)
+  - [useValue()](#usevalue)
+  - [useState()](#usestate)
+  - [use()](#use)
+  - [useWatch()](#usewatch)
+- [Creating Atoms](#creating-atoms)
+- [Helper Atoms](#helper-atoms)
+  - [openAtom](#openatom)
+  - [loadingAtom](#loadingatom)
+  - [fetchingAtom](#fetchingatom)
+  - [portalAtom](#portalatom)
+- [SSR Support](#ssr-support)
+  - [Next.js App Router (13+)](#nextjs-app-router-13)
+  - [Next.js Pages Router](#nextjs-pages-router)
+  - [Remix](#remix)
+- [AtomProvider](#atomprovider)
+- [Working with Arrays](#working-with-arrays)
+- [Complete API Reference](#complete-api-reference)
+- [React 18+ Features](#react-18-features)
+- [Advanced Patterns](#advanced-patterns)
+- [Performance Optimization](#performance-optimization)
+- [Testing Guide](#testing-guide)
+- [TypeScript Patterns](#typescript-patterns)
+- [Best Practices](#best-practices)
+- [Troubleshooting](#troubleshooting)
+- [Migration Guides](#migration-guides)
+- [Real-World Examples](#real-world-examples)
+- [Change Log](#change-log)
+
+## Why React Atom?
+
+React Atom extends [@mongez/atom](https://github.com/hassanzohdy/atom) with React-specific features:
+
+- **React Hooks** - `useValue()`, `useState()`, `use()`, `useWatch()`
+- **SSR Support** - Works with Next.js, Remix, and other SSR frameworks
+- **Helper Atoms** - Pre-built atoms for common patterns (loading, fetching, portals)
+- **Zero Boilerplate** - No providers, actions, or reducers needed
+- **Type-Safe** - Full TypeScript support with inference
+- **Tiny Bundle** - ~3KB gzipped
+
+> **Note**: Make sure to read [@mongez/atom documentation](https://github.com/hassanzohdy/atom) first, as this package is a React adapter.
 
 ## Installation
 
-`yarn add @mongez/react-atom`
+```bash
+yarn add @mongez/react-atom
+```
 
 Or
 
-`npm i @mongez/react-atom`
+```bash
+npm i @mongez/react-atom
+```
 
 Or
 
-`pnpm add @mongez/react-atom`
+```bash
+pnpm add @mongez/react-atom
+```
 
-## Using Atoms outside components
+## Quick Start
 
-Atoms can be accessed outside components, this is useful when you want to use the atom's value in a function or a class, or even in a service.
+Get started in 30 seconds:
 
-By embracing the idea using atoms outside components, we can easily manage the data in a single place, this can help you update or fetch the current atom's value while you're not using it inside a component.
-
-## Creating New Atom
-
-The main idea here is every single data that might be manipulated will be stored independently in a shape of an `atom`.
-
-This will raise the power of single responsibility.
-
-```ts
+```tsx
 import { atom } from "@mongez/react-atom";
 
-export const currencyAtom = atom({
-  key: "currency",
-  default: "EUR",
+// 1. Create an atom
+const counterAtom = atom({
+  key: "counter",
+  default: 0,
 });
+
+// 2. Use in a component
+function Counter() {
+  const count = counterAtom.useValue();
+
+  return (
+    <button onClick={() => counterAtom.update(count + 1)}>
+      Count: {count}
+    </button>
+  );
+}
 ```
 
-> Please note that all atoms are immutables, the default data will be kept untouched if it is an object or an array.
+That's it! The component re-renders automatically when the atom updates.
 
-When creating a new atom, it's recommended to pass the atom's value type as a generic type to the `atom` function, this will help you use the atom's value in a type-safe way.
+## Architecture Overview
 
-## Using Atoms in components
+### How It Extends @mongez/atom
 
-Now the `currencyAtom` atom has only single value, from this point we can use it in anywhere in our application components or event outside components.
+React Atom is a **thin wrapper** around @mongez/atom that adds React-specific functionality:
 
-`Header.tsx`
+```
+@mongez/atom (Core)
+    ↓
+@mongez/react-atom (React Hooks)
+```
+
+**What it adds:**
+
+- React hooks (`useValue`, `useState`, `use`, `useWatch`)
+- SSR Provider component
+- Helper atoms (loading, fetching, portal, open)
+- React-specific optimizations
+
+**What it inherits:**
+
+- All core atom methods (`update`, `merge`, `change`, `watch`, etc.)
+- Event system
+- Atom actions
+- Type safety
+
+### Hook-Based API
+
+All React-specific features are exposed as **methods on the atom**:
 
 ```tsx
-import React from "react";
-import { currencyAtom } from "~/src/atoms";
+const userAtom = atom({ key: "user", default: {} });
 
-export default function Header() {
-  // get current currency value and re-render the component when currency is changed
+// ✅ Hooks are atom methods
+userAtom.useValue();
+userAtom.useState();
+userAtom.use("name");
+
+// ✅ Core methods still available
+userAtom.update(newUser);
+userAtom.merge({ name: "John" });
+userAtom.onChange(() => {});
+```
+
+This design makes atoms **self-contained** - everything you need is on the atom object.
+
+## Core Hooks
+
+### useValue()
+
+Get the atom's value and re-render on changes:
+
+```tsx
+function Header() {
   const currency = currencyAtom.useValue();
 
-  return (
-    <>
-      <h1>Header</h1>
-      Currency: {currency}
-    </>
-  );
+  return <div>Currency: {currency}</div>;
 }
 ```
 
-`Footer.tsx`
+**When to use:**
+
+- You only need to **read** the value
+- You update the atom from event handlers
+- You want the simplest API
+
+### useState()
+
+Get value and updater function (like React's `useState`):
 
 ```tsx
-import React from "react";
-import { useAtom } from "@mongez/react-atom";
-import { currencyAtom } from "~/src/atoms";
-
-export default function Footer() {
-  const currency = currencyAtom.useValue();
-
-  return (
-    <>
-      <h1>Footer</h1>
-      You're using our application in {currency} Currency.
-    </>
-  );
-}
-```
-
-In our Header component we just display the current value of the currency, which is the default value in our atom `EUR`.
-
-In the `Footer` component, we also displayed the current currency in a form of a message.
-
-Now let's add some buttons to change the current currency from the header.
-
-`Header.tsx`
-
-```tsx
-import { useAtom } from "@mongez/react-atom";
-import { currencyAtom } from "~/src/atoms";
-
-export default function Header() {
-  return (
-    <>
-      <h1>Header</h1>
-      <button onClick={() => currencyAtom.update("EUR")}>EUR</button>
-      <button onClick={() => currencyAtom.update("USD")}>USD</button>
-      <button onClick={() => currencyAtom.update("EGP")}>EGP</button>
-    </>
-  );
-}
-```
-
-Once we click on any button of the three buttons, the currency will be changed in our atom, this will re-render the `Header` once the currency is changed.
-
-## Get atom value
-
-Atom's value can be fetched in different ways, depends what are you trying to do.
-
-For example, if you're using the atom outside a `React component` or you're using it inside a component but don't want to rerender the component when the atom's value changes, you can use the `atom.value` property.
-
-```ts
-// anywhere in your app
-import { currencyAtom } from "~/src/atoms";
-
-console.log(currencyAtom.value); // get current value
-```
-
-## Getting atom value and watch for its changes
-
-Another way to get the atom's value when you're inside a React component, we can use `atom.useValue()` to get the atom's value and also trigger a component rerender when the atom's value changes.
-
-```tsx
-import React from "react";
-import { currencyAtom } from "~/src/atoms";
-
-export default function Header() {
-  const currency = currencyAtom.useValue();
-
-  return (
-    <>
-      <h1>Header</h1>
-      Currency: {currency}
-    </>
-  );
-}
-```
-
-## Get atom value and update it
-
-If you want to get the atom's value and update it at the same time, you can use `atom.useState()`.
-
-```tsx
-import React from "react";
-import { currencyAtom } from "~/src/atoms";
-
-export default function Header() {
+function Header() {
   const [currency, setCurrency] = currencyAtom.useState();
 
   return (
     <>
-      <h1>Header</h1>
-      Currency: {currency}
-      <button onClick={(e) => setCurrency("EUR")}>EUR</button>
-      <button onClick={(e) => setCurrency("USD")}>USD</button>
-      <button onClick={(e) => setCurrency("EGP")}>EGP</button>
+      <div>Currency: {currency}</div>
+      <button onClick={() => setCurrency("USD")}>USD</button>
+      <button onClick={() => setCurrency("EUR")}>EUR</button>
     </>
   );
 }
 ```
 
-Works exactly like `useState` hook, the first item in the returned array is the current value of the atom, the second item is a state updater for the atom's value.
+**When to use:**
 
-The main difference here is when the atom's value is changed from any other place, this component will be rerendered automatically.
+- You need both value and updater
+- You're familiar with `useState` API
+- You want to pass updater to child components
 
-## Use
+**Difference from useValue:**
 
-the `atom.use()` hook receives a key of the atom's object, it returns the current value and also watch for that key changes, this will re-render the component when the key is changed.
+- `useValue()` - Returns just the value
+- `useState()` - Returns `[value, updater]` tuple
 
-This is a recommended way to not make any useless renders in your components if other keys in the atom object is changed, we need to watch only for the key we're interested in.
+### use()
+
+Watch a **specific property** of an object atom:
 
 ```tsx
 type User = {
   name: string;
   age: number;
-  position: "developer" | "designer" | "manager";
   notifications: number;
 };
 
@@ -190,584 +206,1754 @@ const userAtom = atom<User>({
   default: {
     name: "Hasan",
     age: 25,
-    position: "developer",
+    notifications: 0,
   },
 });
 
-// now in any component
-import userAtom from "./userAtom";
-export function Header() {
+function Header() {
+  // Only re-renders when notifications change
   const notifications = userAtom.use("notifications");
 
-  return <header>{notifications}</header>;
+  return <div>Notifications: {notifications}</div>;
 }
 ```
 
-This will only re-render the component when the `notifications` property changes.
+**When to use:**
 
-## Changing only single key in the atom's value
+- You only care about **one property**
+- You want to **avoid unnecessary re-renders**
+- The atom is an object with many properties
 
-Instead of passing the whole object to the `setUser` function, we can pass only the key we want to change using `atom.change` function.
+**Performance benefit:**
 
 ```tsx
-import React from "react";
-import { userAtom } from "~/src/atoms";
+// ❌ Re-renders on ANY user change
+const user = userAtom.useValue();
+return <div>{user.notifications}</div>;
 
-export default function UserForm() {
-  const [user, setUser] = userAtom.useState();
-
-  return (
-    <>
-      <h1>User Form</h1>
-      <input
-        type="text"
-        value={user.name}
-        onChange={(e) => userAtom.change("name", e.target.value)}
-      />
-      <input
-        type="text"
-        value={user.email}
-        onChange={(e) => userAtom.change("email", e.target.value)}
-      />
-    </>
-  );
-}
+// ✅ Only re-renders when notifications change
+const notifications = userAtom.use("notifications");
+return <div>{notifications}</div>;
 ```
 
-> It's recommended to use one of the atom update methods `update, change, merge` to update the atom's value, this will be a slightly better performance than using `useState` hook.
+### useWatch()
 
-This will change only the given key in the atom's value, and trigger a component rerender if the atom's value is used in the component.
-
-> Please note that `change` method calls `update` method under the hood, so it will generate a new object.
-
-## Atom Watch Hook
-
-In some scenarios, we may need to watch for a key in the atom's value object for change and perform an action inside a component, the `atom.useWatch` hook is the perfect way to achieve this.
+Execute a callback when a property changes:
 
 ```tsx
-export function SomeComponent() {
+function SomeComponent() {
   const [city, setCity] = useState(userAtom.get("address.city"));
 
+  // Update local state when atom property changes
   userAtom.useWatch("address.city", setCity);
 
-  // first time will render New York then it will render Cairo
-
-  return <>Current City: {city}</>;
+  return <div>Current City: {city}</div>;
 }
 ```
 
-> Please make sure that the callback function is a memoized function, this will prevent the function from being recreated on each render, you can pass the set state function or wrap your custom const callback function with `useCallback` hook.
+**When to use:**
 
-## AtomProvider
+- You need to **sync** atom changes to local state
+- You want to trigger **side effects** on property changes
+- You're integrating with non-atom state
 
-Atom Provider allows you to use same atom in a scoped version, this is useful when you want to deal with an atom inside an array of objects, or using the same atom in multiple components in the same page but each atom handles different data.
+**Important**: The callback should be **memoized** (use `useCallback` or pass a setter function directly).
 
-Wrap the code that you want to use the atom inside it with `AtomProvider`, and pass the to the `register` prop
+## Creating Atoms
+
+### Basic Atom
 
 ```tsx
-import { AtomProvider } from "@mongez/react-atom";
-import { currencyAtom } from "~/src/atoms";
+import { atom } from "@mongez/react-atom";
 
-export default function MyComponent() {
+export const currencyAtom = atom({
+  key: "currency",
+  default: "EUR",
+});
+```
+
+### Object Atom
+
+```tsx
+type User = {
+  name: string;
+  email: string;
+  age: number;
+};
+
+export const userAtom = atom<User>({
+  key: "user",
+  default: {
+    name: "",
+    email: "",
+    age: 0,
+  },
+});
+```
+
+### Atom with Actions
+
+```tsx
+export const counterAtom = atom({
+  key: "counter",
+  default: 0,
+  actions: {
+    increment() {
+      this.update(this.value + 1);
+    },
+    decrement() {
+      this.update(this.value - 1);
+    },
+    reset() {
+      this.update(0);
+    },
+  },
+});
+
+// Usage
+counterAtom.increment();
+counterAtom.decrement();
+counterAtom.reset();
+```
+
+## Helper Atoms
+
+React Atom provides pre-built atoms for common patterns.
+
+### openAtom
+
+Manages open/closed state (modals, dropdowns, etc.):
+
+```tsx
+import { openAtom } from "@mongez/react-atom";
+
+export const loginModalAtom = openAtom("loginModal");
+
+// In your modal component
+function LoginModal() {
+  const isOpen = loginModalAtom.useOpened();
+
   return (
-    <AtomProvider register={[currencyAtom]}>
-      <ChildComponent />
-    </AtomProvider>
+    <Modal isOpen={isOpen} onClose={loginModalAtom.close}>
+      <div>Login Content</div>
+    </Modal>
   );
 }
+
+// Anywhere in your app
+<button onClick={loginModalAtom.open}>Login</button>;
 ```
 
-Now to access any atom from any component wrapped inside `AtomProvider` component, you need to use `useAtom` hook.
+**API:**
+
+- `useOpened()` - Hook to get/watch open state
+- `open()` - Set to true
+- `close()` - Set to false
+- `toggle()` - Toggle state
+
+**Default open:**
 
 ```tsx
-import { useAtom } from "@mongez/react-atom";
+const sidebarAtom = openAtom("sidebar", true); // Open by default
+```
 
-export default function Page() {
-  const userAtom = useAtom("currency");
+### loadingAtom
+
+Manages loading state:
+
+```tsx
+import { loadingAtom } from "@mongez/react-atom";
+
+export const postsLoadingAtom = loadingAtom("postsLoading");
+
+function Posts() {
+  const isLoading = postsLoadingAtom.useValue();
+
+  useEffect(() => {
+    postsLoadingAtom.startLoading();
+
+    fetchPosts()
+      .then(() => postsLoadingAtom.stopLoading())
+      .catch(() => postsLoadingAtom.stopLoading());
+  }, []);
+
+  if (isLoading) return <div>Loading...</div>;
+
+  return <div>Posts...</div>;
+}
+```
+
+**API:**
+
+- `startLoading()` - Set to true
+- `stopLoading()` - Set to false
+- `toggleLoading()` - Toggle state
+- `useValue()` - Hook to get/watch state
+
+### fetchingAtom
+
+Complete data fetching state management:
+
+```tsx
+import { fetchingAtom } from "@mongez/react-atom";
+
+type Post = {
+  id: number;
+  title: string;
+  body: string;
+};
+
+export const postsAtom = fetchingAtom<Post[]>("posts");
+
+function Posts() {
+  const isLoading = postsAtom.useLoading();
+  const posts = postsAtom.useData();
+  const error = postsAtom.useError();
+
+  useEffect(() => {
+    postsAtom.startLoading();
+
+    fetchPosts()
+      .then((response) => {
+        postsAtom.success(response.data, response.pagination);
+      })
+      .catch((error) => {
+        postsAtom.failed(error.message);
+      });
+  }, []);
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
     <div>
-      <div>Value: {value}</div>
-      <button onClick={() => userAtom.change("name", "New Value")}>
-        Change Value
-      </button>
+      {posts?.map((post) => (
+        <div key={post.id}>{post.title}</div>
+      ))}
     </div>
   );
 }
 ```
 
-The main difference here you get a `copy` of the atom by calling `useAtom`, this will ensure that data are separated from the original atom, you get a new copy of the atom.
+**API:**
 
-You may also register multiple atoms at once.
+- `useLoading()` - Hook for loading state
+- `useData()` - Hook for data
+- `useError()` - Hook for error
+- `usePagination()` - Hook for pagination
+- `startLoading()` - Start loading
+- `stopLoading()` - Stop loading
+- `success(data, pagination?)` - Mark as successful
+- `failed(error)` - Mark as failed
+- `append(data)` - Append to array data
+- `prepend(data)` - Prepend to array data
+
+**Pagination support:**
 
 ```tsx
-import { AtomProvider } from "@mongez/react-atom";
-import currentAtom from "./currentAtom";
-import userAtom from "./userAtom";
+postsAtom.success(posts, {
+  currentPage: 1,
+  totalPages: 10,
+  total: 100,
+});
 
-export default function App() {
-  return (
-    <AtomProvider register={[currentAtom, userAtom]}>
-      <App />
-    </AtomProvider>
-  );
+const pagination = postsAtom.usePagination();
+```
+
+**Infinite scroll:**
+
+```tsx
+function loadMore() {
+  fetchNextPage().then((newPosts) => {
+    postsAtom.append(newPosts);
+  });
 }
 ```
 
-Because atoms are auto registered when the atom's file is being imported `(when declaring an atom)`, this happens when the atom is being imported, but now we are using `useAtom` instead of the atom itself, thus we need to register the atom as well.
+### portalAtom
 
-The argument passed to the `useAtom` hook is the atom name.
+For modals/drawers that need to pass data:
+
+```tsx
+import { portalAtom } from "@mongez/react-atom";
+
+type EditUserData = {
+  userId: number;
+  initialName: string;
+};
+
+export const editUserPortal = portalAtom<EditUserData>("editUser");
+
+// Modal component
+function EditUserModal() {
+  const isOpen = editUserPortal.useOpened();
+  const data = editUserPortal.useData();
+
+  return (
+    <Modal isOpen={isOpen} onClose={editUserPortal.close}>
+      <div>Editing user {data.userId}</div>
+      <input defaultValue={data.initialName} />
+    </Modal>
+  );
+}
+
+// Trigger from anywhere
+<button
+  onClick={() =>
+    editUserPortal.open({
+      userId: 123,
+      initialName: "John",
+    })
+  }
+>
+  Edit User
+</button>;
+```
+
+**API:**
+
+- `useOpened()` - Hook for open state
+- `useData()` - Hook for data
+- `open(data?)` - Open with optional data
+- `close()` - Close
+- `toggle(data?)` - Toggle with optional data
 
 ## SSR Support
 
-Now atoms can lay in SSR environments like Nextjs, Remix, etc, but with a little bit of change.
+React Atom works seamlessly with SSR frameworks.
 
-To make sure that the atom's value is being updated in both client and server, we need to create a special atom provider from the atom itself.
+### Next.js App Router (13+)
+
+**Important**: Add `"use client"` directive to atom files and components using atoms.
+
+#### Creating Atoms
 
 ```tsx
-// it is important to add the `usa client` directive
-"use client";
 // src/atoms/user-atom.ts
+"use client";
+
 import { atom } from "@mongez/react-atom";
 
 type User = {
   name: string;
   email: string;
-  age: number;
-  id: number;
 };
 
 const userAtom = atom<User>({
   key: "user",
-  default: {},
+  default: {
+    name: "",
+    email: "",
+  },
 });
 
-// very important is to create the UserAtomProvider
+// Export the Provider for SSR
 export const UserAtomProvider = userAtom.Provider;
+
+export default userAtom;
 ```
 
-We can not directly use `userAtom.Provider` in Nextjs as it will throw an error of not identifying it, so we need to export it in a separate const `UserAtomProvider`.
-
-> Any component that uses the atom must declare `use client` directive at the top of the file because atoms uses React useState hook under the hood, and this hook is not available in the server side.
+#### Using in Server Components
 
 ```tsx
-// src/app/page.tsx
-import { UserAtomProvider } from "~/atoms/user-atom";
+// app/page.tsx (Server Component)
+import { UserAtomProvider } from "@/atoms/user-atom";
+import UserProfile from "@/components/UserProfile";
 
-export default function Page() {
-  const userFromCookies = {};
+export default async function Page() {
+  // Fetch user data on server
+  const user = await fetchUser();
 
   return (
-    <UserAtomProvider value={userFromCookies}>
-      <OtherComponentsListHere />
+    <UserAtomProvider value={user}>
+      <UserProfile />
     </UserAtomProvider>
   );
 }
 ```
 
-Now you can use the `userAtom` as usual in any component, it will be updated in both client and server.
-
-## Helper Atoms
-
-Helper atoms functions allow you to easily manage `variant` atoms that you would probably use in your app.
-
-### Portal Atom
-
-> Added in V5.1.0
-
-The portal atom is mainly used when working with modals, drawers or any other component that requires a state management and data transfer from a component to any other component that is not in the same component.
+#### Using in Client Components
 
 ```tsx
-import { portalAtom } from "@mongez/react-atom";
+// components/UserProfile.tsx
+"use client";
 
-export const loginPortal = portalAtom("loginPopup");
-```
+import userAtom from "@/atoms/user-atom";
 
-Now let's declare the `LoginPopup` component.
-
-`LoginPopup.tsx`
-
-```tsx
-import { loginPortal } from "./atoms";
-
-export default function LoginPopup() {
-  const opened = loginPortal.useOpened();
+export default function UserProfile() {
+  const user = userAtom.useValue();
 
   return (
-    <Modal isOpen={opened} onClose={loginPortal.close}>
-      <div>Login Content Here</div>
-    </Modal>
+    <div>
+      <h1>{user.name}</h1>
+      <p>{user.email}</p>
+    </div>
   );
 }
 ```
 
-Import the `LoginPopup` in the layout component or any shared component across the app.
-
-`Layout.tsx`
+### Next.js Pages Router
 
 ```tsx
-import LoginPopup from "./LoginPopup";
+// pages/_app.tsx
+import { UserAtomProvider } from "@/atoms/user-atom";
 
-export default function Layout({ children }: { children: React.ReactNode }) {
+function MyApp({ Component, pageProps }) {
+  return (
+    <UserAtomProvider value={pageProps.user}>
+      <Component {...pageProps} />
+    </UserAtomProvider>
+  );
+}
+
+export default MyApp;
+```
+
+```tsx
+// pages/index.tsx
+export async function getServerSideProps() {
+  const user = await fetchUser();
+
+  return {
+    props: {
+      user,
+    },
+  };
+}
+```
+
+### Remix
+
+```tsx
+// routes/index.tsx
+import { json } from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
+import { UserAtomProvider } from "@/atoms/user-atom";
+import UserProfile from "@/components/UserProfile";
+
+export async function loader() {
+  const user = await fetchUser();
+  return json({ user });
+}
+
+export default function Index() {
+  const { user } = useLoaderData<typeof loader>();
+
+  return (
+    <UserAtomProvider value={user}>
+      <UserProfile />
+    </UserAtomProvider>
+  );
+}
+```
+
+## AtomProvider
+
+Create scoped atom instances (useful for lists or isolated contexts):
+
+```tsx
+import { AtomProvider } from "@mongez/react-atom";
+import { userAtom } from "@/atoms";
+
+function UserList() {
+  const users = [
+    { id: 1, name: "John" },
+    { id: 2, name: "Jane" },
+  ];
+
   return (
     <>
-      <LoginPopup />
-      {children}
+      {users.map((user) => (
+        <AtomProvider key={user.id} register={[userAtom]}>
+          <UserCard initialData={user} />
+        </AtomProvider>
+      ))}
     </>
   );
 }
-```
 
-From any component, you can open the login popup using `loginPortal.open()` function, let's open it from the header component.
-
-`Header.tsx`
-
-```tsx
-import { loginPortal } from "./atoms";
-
-export default function Header() {
-  return <button onClick={loginPortal.open}>Login</button>;
-}
-```
-
-### Open Atom
-
-The `openAtom` function is mainly used to manage an open state, this one is useful when working with modals, popups, etc.
-
-```tsx
-import { openAtom } from "@mongez/react-atom";
-
-export const loginPopupAtom = openAtom("openAtom");
-```
-
-This atom exposes 4 actions
-
-- `useOpened`: a hook to get and watch for the `opened` value.
-- `open`: a function that sets the `opened` value to `true`.
-- `close`: a function that sets the `opened` value to `false`.
-- `toggle`: a function that toggles the `opened` value.
-
-By default, `opened` is set to `false`, if you want to set it to `true` by default, pass `true` as the second argument to `booleanAtom` function.
-
-```tsx
-import { openAtom } from "@mongez/react-atom";
-
-export const loginPopupAtom = openAtom("loginPopup", true);
-```
-
-Let's see an example of usage
-
-`LoginPopup.tsx`
-
-```tsx
-import { loginPopupAtom } from "./atoms";
-
-export default function LoginPopup() {
-  const opened = loginPopupAtom.useOpened(); // watch for opened when it is changed
-
-  return (
-    <Modal isOpen={opened} onClose={loginPopupAtom.close}>
-      <div>Login Content Here</div>
-    </Modal>
-  );
-}
-```
-
-Using `open` action to open the popup:
-
-`Header.tsx`
-
-```tsx
-import { loginPopupAtom } from "./atoms";
-
-export default function Header() {
-  return (
-    <div>
-      <button onClick={loginPopupAtom.open}>Login</button>
-    </div>
-  );
-}
-```
-
-This applies to `close` and `toggle` functions as well.
-
-### Loading Atom
-
-Another good helper function is `loadingAtom` which is used to manage a loading state, this is useful when you want to show a loading indicator when a request is being made.
-
-It has 3 actions:
-
-- `startLoading`: a function that sets the atom value to `true`.
-- `stopLoading`: a function that sets the atom value to `false`.
-- `toggleLoading`: a function that toggles the atom value.
-
-By default, atom value is set to `false`, if you want to set it to `true` by default, pass `true` as the second argument to `loadingAtom` function.
-
-```tsx
-import { loadingAtom } from "@mongez/react-atom";
-
-export const loadingPostsAtom = loadingAtom("loadingPosts", true);
-```
-
-Let's see an example of usage
-
-`Posts.tsx`
-
-```tsx
-import { loadingPostsAtom } from "./atoms";
-import { useEffect, useState } from "react";
-import { loadPosts } from "./api";
-
-export default function Posts() {
-  const [posts, setPosts] = useState([]);
-  const isLoading = loadingPostsAtom.useValue(); // watch for isLoading when it is changed
+function UserCard({ initialData }) {
+  const scopedUserAtom = useAtom("user");
 
   useEffect(() => {
-    loadingPostsAtom.startLoading();
-    loadPosts().then((response) => {
-      loadingPostsAtom.stopLoading();
-      setPosts(response.data.posts);
-    });
+    scopedUserAtom.update(initialData);
   }, []);
 
-  return (
-    <div>
-      {isLoading && <div>Loading...</div>}
-      {posts.map((post) => (
-        <div>{post.title}</div>
-      ))}
-    </div>
-  );
+  const user = scopedUserAtom.useValue();
+
+  return <div>{user.name}</div>;
 }
 ```
 
-> The `loadingAtom` has same functions as `openAtom`, but instead of `open`, `close` and `toggle`, it has `startLoading`, `stopLoading` and `toggleLoading`.
-
-### Fetching Atom
-
-This helper atom is quiet good actually, it allows you to manage an API fetching, consider it a full atom that manages the loading state, the data, and the error.
-
-It exposes `8` actions:
-
-- `useLoading`: a hook to get and watch for the `isLoading` value.
-- `startLoading`: a function that sets the `isLoading` value to `true`.
-- `stopLoading`: a function that sets the `isLoading` value to `false`.
-- `useData`: a hook to get and watch for the `data` value.
-- `usePagination`: a hook to get and watch for the `pagination` value, default value is `null`.
-- `useError`: a hook to get and watch for the `error` value.
-- `success`: A function that sets the `data` value and sets the `isLoading` value to `false`.
-- `failed`: A function that sets the `error` value and sets the `isLoading` value to `false`.
-- `append`: A function that works only if data is `array`, it appends the new data to the end of array.
-- `prepend`: A function that works only if data is `array`, it prepends the new data to the beginning of array.
-
-Let's use the previous example of posts but this time with `fetchingAtom`
-
-`src/atoms/posts-atom.ts`
-
-```ts
-import { fetchingAtom } from "@mongez/react-atom";
-
-export type Post = {
-  id: number;
-  title: string;
-  body: string;
-};
-// define the post type as an array for better type checking
-export const postsAtom = fetchingAtom<Post[]>("posts");
-```
-
-Our atom is ready to be used, let's use it in our `Posts` component
-
-`src/components/Posts.tsx`
+**Multiple atoms:**
 
 ```tsx
-import { postsAtom } from "../atoms/posts-atom";
-import { useEffect } from "react";
-
-export default function Posts() {
-  const isLoading = postsAtom.useLoading(); // watch for isLoading when it is changed
-  const data = postsAtom.useData(); // watch for data when it is changed
-  const error = postsAtom.useError(); // watch for error when it is changed
-
-  useEffect(() => {
-    postsAtom.startLoading();
-    loadPosts()
-      .then((response) => {
-        postsAtom.success(response.data.posts, response.data.pagination);
-      })
-      .catch((error) => {
-        postsAtom.failed(error);
-      });
-  }, []);
-
-  return (
-    <div>
-      {isLoading && <div>Loading...</div>}
-      {data && data.map((post) => <div>{post.title}</div>)}
-      {error && <div>{error.message}</div>}
-    </div>
-  );
-}
+<AtomProvider register={[userAtom, settingsAtom, themeAtom]}>
+  <App />
+</AtomProvider>
 ```
-
-## Best Practices With Atoms
-
-Atoms have two main objectives, a triggering atom update and a listening for changes, so it is always better to separate any component that is going to be only the updating component from the component that is going to listen for changes.
-
-In the `login` example, we have put the `loginPopup` update in the `Header` component, when user clicks on the login button, it will trigger atom update but the `Header` component is not interested in listening for changes, it is only interested in triggering the update so it will not re-render, in the meanwhile, the `LoginPopup` component is interested in listening for changes, so it will re-render when the atom is updated.
-
-Let's put this into action, in the `fetchingAtom` example, we used triggering and listening values in the same component, let's separate them.
-
-`src/components/Posts.tsx`
-
-```tsx
-import { postsAtom } from "../atoms/posts-atom";
-import { useEffect } from "react";
-import LoadingPosts from "./LoadingPosts";
-import PostsList from "./PostsList";
-import PostsError from "./PostsError";
-
-export default function Posts() {
-  useEffect(() => {
-    postsAtom.startLoading();
-    loadPosts()
-      .then((response) => {
-        postsAtom.success(response.data.posts);
-      })
-      .catch((error) => {
-        postsAtom.failed(error);
-      });
-  }, []);
-
-  return (
-    <div>
-      <LoadingPosts />
-      <PostsList />
-      <PostsError />
-    </div>
-  );
-}
-```
-
-Now we have separated the triggering component from the listening components, this will make the `Posts` component only responsible for triggering the atom update, and the `LoadingPosts`, `PostsList` and `PostsError` components are only responsible for listening for changes.
-
-Let's create these components
-
-`src/components/LoadingPosts.tsx`
-
-```tsx
-import { postsAtom } from "../atoms/posts-atom";
-
-export default function LoadingPosts() {
-  const isLoading = postsAtom.useLoading(); // watch for isLoading when it is changed
-
-  if (!isLoading) {
-    return null;
-  }
-
-  return <div>Loading...</div>;
-}
-```
-
-`src/components/PostsList.tsx`
-
-```tsx
-import { postsAtom } from "../atoms/posts-atom";
-
-export default function PostsList() {
-  const data = postsAtom.useData(); // watch for data when it is changed
-
-  if (!data) {
-    return null;
-  }
-
-  return (
-    <div>
-      {data.map((post) => (
-        <div>{post.title}</div>
-      ))}
-    </div>
-  );
-}
-```
-
-`src/components/PostsError.tsx`
-
-```tsx
-import { postsAtom } from "../atoms/posts-atom";
-
-export default function PostsError() {
-  const error = postsAtom.useError(); // watch for error when it is changed
-
-  if (!error) {
-    return null;
-  }
-
-  return <div>{error.message}</div>;
-}
-```
-
-Using this approach, `Posts` component will not re-render when the atom is updated, this will make it render only once, each other component will be rendered for first time, then based on the atom changes, each component will start interacting.
-
-For example the `LoadingPosts` component will be rendered for first time, then when calling `startLoading` method, it will re-render again, but the `Posts` component will not re-render because it is not listening for `isLoading` changes.
 
 ## Working with Arrays
 
-Mongez React Atom provides same [collectAtom](https://github.com/hassanzohdy/atom#working-with-atom-as-arrays) function to work with arrays in React.
-
-```ts
-import { collectAtom } from "@mongez/react-atom";
-
-export const postsAtom = collectAtom<Post[]>("posts", []);
-```
-
-Now a simple usage of the `postsAtom` atom
+Use `atomCollection` for array-specific methods:
 
 ```tsx
-import { postsAtom } from "~/src/atoms";
+import { atomCollection } from "@mongez/react-atom";
 
-export default function Posts() {
-  const posts = postsAtom.useValue();
+type Todo = {
+  id: number;
+  text: string;
+  done: boolean;
+};
+
+const todosAtom = atomCollection<Todo>({
+  key: "todos",
+  default: [],
+});
+
+function TodoList() {
+  const todos = todosAtom.useValue();
+
+  const addTodo = (text: string) => {
+    todosAtom.push({
+      id: Date.now(),
+      text,
+      done: false,
+    });
+  };
+
+  const removeTodo = (id: number) => {
+    todosAtom.remove((todo) => todo.id === id);
+  };
 
   return (
     <div>
-      {posts.map((post) => (
-        <div>{post.title}</div>
+      {todos.map((todo) => (
+        <div key={todo.id}>
+          {todo.text}
+          <button onClick={() => removeTodo(todo.id)}>Delete</button>
+        </div>
       ))}
     </div>
   );
 }
 ```
 
-### Add item to the array
+See [@mongez/atom documentation](https://github.com/hassanzohdy/atom#working-with-arrays) for all array methods.
+
+## Complete API Reference
+
+### Atom Creation
+
+| Function                           | Parameters                             | Returns     | Description             |
+| ---------------------------------- | -------------------------------------- | ----------- | ----------------------- |
+| `atom<Value, Actions>()`           | `AtomOptions`                          | `ReactAtom` | Creates a React atom    |
+| `atomCollection<Value>()`          | `CollectionOptions`                    | `ReactAtom` | Creates array atom      |
+| `openAtom()`                       | `key, defaultOpen?`                    | `ReactAtom` | Creates open/close atom |
+| `loadingAtom()`                    | `key, defaultLoading?`                 | `ReactAtom` | Creates loading atom    |
+| `fetchingAtom<Data, Pagination>()` | `key, defaultValue?, defaultFetching?` | `ReactAtom` | Creates fetching atom   |
+| `portalAtom<Data>()`               | `key, defaultOpen?`                    | `ReactAtom` | Creates portal atom     |
+
+### React Hooks (on atom instance)
+
+| Hook                      | Returns                    | Description                               |
+| ------------------------- | -------------------------- | ----------------------------------------- |
+| `useValue()`              | `Value`                    | Get value and re-render on changes        |
+| `useState()`              | `[Value, (value) => void]` | Get value and updater                     |
+| `use<K>(key)`             | `Value[K]`                 | Get property and re-render on its changes |
+| `useWatch(key, callback)` | `void`                     | Execute callback on property change       |
+
+### SSR Components
+
+| Component       | Props                               | Description           |
+| --------------- | ----------------------------------- | --------------------- |
+| `atom.Provider` | `value, children`                   | SSR provider for atom |
+| `AtomProvider`  | `register, defaultValue?, children` | Scoped atom provider  |
+
+### Context Hooks
+
+| Hook              | Parameters    | Returns        | Description                       |
+| ----------------- | ------------- | -------------- | --------------------------------- |
+| `useAtom<T>(key)` | `key: string` | `ReactAtom<T>` | Get scoped atom from AtomProvider |
+
+### Helper Atom APIs
+
+#### openAtom
+
+| Method/Hook   | Returns   | Description          |
+| ------------- | --------- | -------------------- |
+| `useOpened()` | `boolean` | Get/watch open state |
+| `open()`      | `void`    | Set to true          |
+| `close()`     | `void`    | Set to false         |
+| `toggle()`    | `void`    | Toggle state         |
+
+#### loadingAtom
+
+| Method/Hook       | Returns   | Description             |
+| ----------------- | --------- | ----------------------- |
+| `useValue()`      | `boolean` | Get/watch loading state |
+| `startLoading()`  | `void`    | Set to true             |
+| `stopLoading()`   | `void`    | Set to false            |
+| `toggleLoading()` | `void`    | Toggle state            |
+
+#### fetchingAtom
+
+| Method/Hook                  | Returns                   | Description          |
+| ---------------------------- | ------------------------- | -------------------- |
+| `useLoading()`               | `boolean`                 | Get/watch loading    |
+| `useData()`                  | `Data \| null`            | Get/watch data       |
+| `useError()`                 | `any`                     | Get/watch error      |
+| `usePagination()`            | `Pagination \| undefined` | Get/watch pagination |
+| `startLoading()`             | `void`                    | Start loading        |
+| `stopLoading()`              | `void`                    | Stop loading         |
+| `success(data, pagination?)` | `void`                    | Mark successful      |
+| `failed(error)`              | `void`                    | Mark failed          |
+| `append(data)`               | `void`                    | Append to array      |
+| `prepend(data)`              | `void`                    | Prepend to array     |
+
+#### portalAtom
+
+| Method/Hook     | Returns   | Description          |
+| --------------- | --------- | -------------------- |
+| `useOpened()`   | `boolean` | Get/watch open state |
+| `useData()`     | `Data`    | Get/watch data       |
+| `open(data?)`   | `void`    | Open with data       |
+| `close()`       | `void`    | Close                |
+| `toggle(data?)` | `void`    | Toggle with data     |
+
+## React 18+ Features
+
+### Concurrent Mode
+
+Atoms work seamlessly with React 18's Concurrent Mode:
 
 ```tsx
-import { postsAtom } from "~/src/atoms";
+function UserProfile() {
+  const user = userAtom.useValue();
 
-export default function AddPost() {
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
+  // Concurrent rendering works automatically
+  return <div>{user.name}</div>;
+}
+```
 
-  const addPost = () => {
-    postsAtom.push({
-      title,
-      body,
+### useTransition
+
+Defer atom updates to keep UI responsive:
+
+```tsx
+function SearchResults() {
+  const [isPending, startTransition] = useTransition();
+  const results = searchResultsAtom.useValue();
+
+  const handleSearch = (query: string) => {
+    startTransition(() => {
+      // This update won't block the UI
+      searchResultsAtom.update(performSearch(query));
     });
   };
 
   return (
     <div>
+      <input onChange={(e) => handleSearch(e.target.value)} />
+      {isPending && <div>Searching...</div>}
+      <Results data={results} />
+    </div>
+  );
+}
+```
+
+### useDeferredValue
+
+Defer expensive re-renders:
+
+```tsx
+function FilteredList() {
+  const items = itemsAtom.useValue();
+  const filter = filterAtom.useValue();
+
+  // Defer filtering to keep input responsive
+  const deferredFilter = useDeferredValue(filter);
+
+  const filtered = useMemo(
+    () => items.filter((item) => item.includes(deferredFilter)),
+    [items, deferredFilter],
+  );
+
+  return <List items={filtered} />;
+}
+```
+
+### Suspense Integration
+
+Wrap async atom updates with Suspense:
+
+```tsx
+const userAtom = atom({
+  key: "user",
+  default: null,
+  actions: {
+    async load(userId: string) {
+      const user = await fetchUser(userId);
+      this.update(user);
+    },
+  },
+});
+
+function UserProfile({ userId }) {
+  const user = userAtom.useValue();
+
+  useEffect(() => {
+    userAtom.load(userId);
+  }, [userId]);
+
+  if (!user) throw new Promise(() => {}); // Trigger Suspense
+
+  return <div>{user.name}</div>;
+}
+
+// Usage
+<Suspense fallback={<div>Loading...</div>}>
+  <UserProfile userId="123" />
+</Suspense>;
+```
+
+## Advanced Patterns
+
+### Optimistic Updates
+
+Update UI immediately, rollback on error:
+
+```tsx
+const todosAtom = atomCollection<Todo>({ key: "todos", default: [] });
+
+async function addTodo(text: string) {
+  const optimisticTodo = {
+    id: Date.now(),
+    text,
+    done: false,
+  };
+
+  // Optimistic update
+  todosAtom.push(optimisticTodo);
+
+  try {
+    const savedTodo = await api.createTodo(text);
+    // Replace optimistic with real
+    todosAtom.replace(
+      todosAtom.index((t) => t.id === optimisticTodo.id),
+      savedTodo,
+    );
+  } catch (error) {
+    // Rollback on error
+    todosAtom.remove((t) => t.id === optimisticTodo.id);
+    alert("Failed to create todo");
+  }
+}
+```
+
+### Derived State
+
+Create atoms that derive from others:
+
+```tsx
+const firstNameAtom = atom({ key: "firstName", default: "John" });
+const lastNameAtom = atom({ key: "lastName", default: "Doe" });
+
+const fullNameAtom = atom({ key: "fullName", default: "" });
+
+// Sync derived state
+function useSyncFullName() {
+  const firstName = firstNameAtom.useValue();
+  const lastName = lastNameAtom.useValue();
+
+  useEffect(() => {
+    fullNameAtom.silentUpdate(`${firstName} ${lastName}`);
+  }, [firstName, lastName]);
+}
+
+// Use in component
+function App() {
+  useSyncFullName();
+  const fullName = fullNameAtom.useValue();
+
+  return <div>{fullName}</div>;
+}
+```
+
+### Atom Selectors
+
+Select and transform atom data:
+
+```tsx
+const usersAtom = atomCollection<User>({ key: "users", default: [] });
+
+function useActiveUsers() {
+  const users = usersAtom.useValue();
+  return useMemo(() => users.filter((user) => user.active), [users]);
+}
+
+function useUserById(id: number) {
+  const users = usersAtom.useValue();
+  return useMemo(() => users.find((user) => user.id === id), [users, id]);
+}
+```
+
+### Request Deduplication
+
+Prevent duplicate API calls:
+
+```tsx
+const requestCache = new Map<string, Promise<any>>();
+
+const userAtom = atom({
+  key: "user",
+  default: null,
+  actions: {
+    async load(userId: string) {
+      const cacheKey = `user:${userId}`;
+
+      if (!requestCache.has(cacheKey)) {
+        requestCache.set(
+          cacheKey,
+          fetchUser(userId).finally(() => {
+            requestCache.delete(cacheKey);
+          }),
+        );
+      }
+
+      const user = await requestCache.get(cacheKey);
+      this.update(user);
+    },
+  },
+});
+```
+
+### Infinite Scroll
+
+Implement infinite scroll with fetchingAtom:
+
+```tsx
+const postsAtom = fetchingAtom<Post[]>("posts", []);
+
+function InfinitePostList() {
+  const posts = postsAtom.useData();
+  const isLoading = postsAtom.useLoading();
+  const pagination = postsAtom.usePagination();
+
+  const loadMore = async () => {
+    if (isLoading || !pagination?.hasMore) return;
+
+    postsAtom.startLoading();
+
+    try {
+      const { data, pagination: newPagination } = await fetchPosts(
+        pagination.currentPage + 1,
+      );
+
+      postsAtom.append(data);
+      postsAtom.merge({ pagination: newPagination });
+    } catch (error) {
+      postsAtom.failed(error);
+    }
+  };
+
+  return (
+    <div>
+      {posts?.map((post) => (
+        <PostCard key={post.id} post={post} />
+      ))}
+      {pagination?.hasMore && (
+        <button onClick={loadMore} disabled={isLoading}>
+          {isLoading ? "Loading..." : "Load More"}
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Performance Optimization
+
+### Preventing Unnecessary Re-renders
+
+**1. Use `.use()` for specific properties:**
+
+```tsx
+// ❌ Re-renders on ANY user change
+function Header() {
+  const user = userAtom.useValue();
+  return <div>{user.notifications}</div>;
+}
+
+// ✅ Only re-renders on notifications change
+function Header() {
+  const notifications = userAtom.use("notifications");
+  return <div>{notifications}</div>;
+}
+```
+
+**2. Split atoms by concern:**
+
+```tsx
+// ❌ One large atom
+const appAtom = atom({
+  key: "app",
+  default: {
+    user: {},
+    theme: "light",
+    language: "en",
+    notifications: [],
+  },
+});
+
+// ✅ Separate atoms
+const userAtom = atom({ key: "user", default: {} });
+const themeAtom = atom({ key: "theme", default: "light" });
+const languageAtom = atom({ key: "language", default: "en" });
+const notificationsAtom = atomCollection({ key: "notifications", default: [] });
+```
+
+**3. Separate triggering from listening:**
+
+```tsx
+// ❌ Component triggers AND listens
+function Posts() {
+  const posts = postsAtom.useData();
+
+  useEffect(() => {
+    postsAtom.startLoading();
+    fetchPosts().then((data) => postsAtom.success(data));
+  }, []);
+
+  return <div>{posts?.map(...)}</div>;
+}
+
+// ✅ Separate components
+function PostsLoader() {
+  useEffect(() => {
+    postsAtom.startLoading();
+    fetchPosts().then((data) => postsAtom.success(data));
+  }, []);
+
+  return null; // Doesn't re-render
+}
+
+function PostsList() {
+  const posts = postsAtom.useData();
+  return <div>{posts?.map(...)}</div>;
+}
+
+function Posts() {
+  return (
+    <>
+      <PostsLoader />
+      <PostsList />
+    </>
+  );
+}
+```
+
+### Memoization
+
+**Memoize expensive computations:**
+
+```tsx
+function FilteredList() {
+  const items = itemsAtom.useValue();
+  const filter = filterAtom.useValue();
+
+  const filtered = useMemo(
+    () => items.filter((item) => item.name.includes(filter)),
+    [items, filter],
+  );
+
+  return <List items={filtered} />;
+}
+```
+
+**Memoize components:**
+
+```tsx
+const PostCard = memo(function PostCard({ post }: { post: Post }) {
+  return <div>{post.title}</div>;
+});
+
+function PostsList() {
+  const posts = postsAtom.useData();
+
+  return (
+    <div>
+      {posts?.map((post) => (
+        <PostCard key={post.id} post={post} />
+      ))}
+    </div>
+  );
+}
+```
+
+### Code Splitting
+
+Split atoms by route:
+
+```tsx
+// routes/posts/atoms.ts
+export const postsAtom = fetchingAtom<Post[]>("posts");
+
+// routes/users/atoms.ts
+export const usersAtom = fetchingAtom<User[]>("users");
+
+// Only load atoms when route is accessed
+const PostsPage = lazy(() => import("./routes/posts/PostsPage"));
+const UsersPage = lazy(() => import("./routes/users/UsersPage"));
+```
+
+## Testing Guide
+
+### Unit Testing Atoms
+
+```tsx
+import { createAtom } from "@mongez/atom";
+
+describe("counterAtom", () => {
+  let counterAtom;
+
+  beforeEach(() => {
+    counterAtom = createAtom({
+      key: "counter-test",
+      default: 0,
+    });
+  });
+
+  afterEach(() => {
+    counterAtom.destroy();
+  });
+
+  it("should have default value", () => {
+    expect(counterAtom.value).toBe(0);
+  });
+
+  it("should update value", () => {
+    counterAtom.update(5);
+    expect(counterAtom.value).toBe(5);
+  });
+
+  it("should notify listeners", () => {
+    const listener = jest.fn();
+    counterAtom.onChange(listener);
+
+    counterAtom.update(10);
+
+    expect(listener).toHaveBeenCalledWith(10, 0, counterAtom);
+  });
+});
+```
+
+### Testing Components with Atoms
+
+**Using React Testing Library:**
+
+```tsx
+import { render, screen, fireEvent } from "@testing-library/react";
+import { atom } from "@mongez/react-atom";
+import Counter from "./Counter";
+
+const counterAtom = atom({ key: "counter-test", default: 0 });
+
+describe("Counter", () => {
+  beforeEach(() => {
+    counterAtom.reset();
+  });
+
+  afterEach(() => {
+    counterAtom.destroy();
+  });
+
+  it("should display count", () => {
+    render(<Counter />);
+    expect(screen.getByText("Count: 0")).toBeInTheDocument();
+  });
+
+  it("should increment on click", () => {
+    render(<Counter />);
+
+    fireEvent.click(screen.getByText("Increment"));
+
+    expect(screen.getByText("Count: 1")).toBeInTheDocument();
+  });
+});
+```
+
+### Mocking Atoms
+
+```tsx
+// __mocks__/atoms.ts
+import { atom } from "@mongez/react-atom";
+
+export const userAtom = atom({
+  key: "user-mock",
+  default: {
+    id: 1,
+    name: "Test User",
+    email: "test@example.com",
+  },
+});
+
+// test file
+jest.mock("@/atoms", () => require("./__mocks__/atoms"));
+
+test("renders user name", () => {
+  render(<UserProfile />);
+  expect(screen.getByText("Test User")).toBeInTheDocument();
+});
+```
+
+### Integration Testing
+
+```tsx
+import { render, screen, waitFor } from "@testing-library/react";
+import { postsAtom } from "@/atoms";
+import PostsList from "./PostsList";
+
+describe("PostsList Integration", () => {
+  beforeEach(() => {
+    postsAtom.reset();
+  });
+
+  it("should load and display posts", async () => {
+    render(<PostsList />);
+
+    // Should show loading
+    expect(screen.getByText("Loading...")).toBeInTheDocument();
+
+    // Wait for posts to load
+    await waitFor(() => {
+      expect(screen.getByText("Post 1")).toBeInTheDocument();
+    });
+
+    // Should hide loading
+    expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+  });
+});
+```
+
+## TypeScript Patterns
+
+### Type-Safe Atoms
+
+```tsx
+type User = {
+  id: number;
+  name: string;
+  email: string;
+};
+
+const userAtom = atom<User>({
+  key: "user",
+  default: {
+    id: 0,
+    name: "",
+    email: "",
+  },
+});
+
+// Full type safety
+const name = userAtom.use("name"); // string
+const id = userAtom.use("id"); // number
+userAtom.change("email", "test@example.com"); // ✅
+userAtom.change("email", 123); // ❌ Type error
+```
+
+### Generic Helper Atoms
+
+```tsx
+function createEntityAtom<T extends { id: number }>(
+  key: string,
+  defaultValue: T,
+) {
+  return atom<T>({
+    key,
+    default: defaultValue,
+    actions: {
+      updateById(id: number, updates: Partial<T>) {
+        if (this.value.id === id) {
+          this.merge(updates);
+        }
+      },
+    },
+  });
+}
+
+// Usage
+const userAtom = createEntityAtom("user", {
+  id: 1,
+  name: "John",
+  email: "john@example.com",
+});
+
+userAtom.updateById(1, { name: "Jane" }); // ✅ Type-safe
+```
+
+### Discriminated Unions
+
+```tsx
+type LoadingState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "success"; data: User }
+  | { status: "error"; error: string };
+
+const userLoadingAtom = atom<LoadingState>({
+  key: "userLoading",
+  default: { status: "idle" },
+});
+
+function UserProfile() {
+  const state = userLoadingAtom.useValue();
+
+  switch (state.status) {
+    case "idle":
+      return <div>Click to load</div>;
+    case "loading":
+      return <div>Loading...</div>;
+    case "success":
+      return <div>{state.data.name}</div>; // Type-safe!
+    case "error":
+      return <div>Error: {state.error}</div>;
+  }
+}
+```
+
+## Best Practices
+
+### 1. Separate Triggering from Listening
+
+```tsx
+// ✅ Good: Separate concerns
+function PostsLoader() {
+  useEffect(() => {
+    postsAtom.startLoading();
+    fetchPosts().then((data) => postsAtom.success(data));
+  }, []);
+  return null;
+}
+
+function PostsList() {
+  const posts = postsAtom.useData();
+  return <div>{posts?.map(...)}</div>;
+}
+```
+
+### 2. Use Specific Hooks
+
+```tsx
+// ❌ Bad: Re-renders on any user change
+const user = userAtom.useValue();
+return <div>{user.notifications}</div>;
+
+// ✅ Good: Only re-renders on notifications change
+const notifications = userAtom.use("notifications");
+return <div>{notifications}</div>;
+```
+
+### 3. Clean Up Subscriptions
+
+```tsx
+// ✅ Hooks handle cleanup automatically
+userAtom.useValue(); // Auto-cleanup on unmount
+
+// ❌ Manual subscriptions need cleanup
+useEffect(() => {
+  const sub = userAtom.onChange(() => {});
+  return () => sub.unsubscribe(); // Don't forget!
+}, []);
+```
+
+### 4. Use Helper Atoms
+
+```tsx
+// ❌ Bad: Manual state management
+const [isLoading, setIsLoading] = useState(false);
+const [data, setData] = useState(null);
+const [error, setError] = useState(null);
+
+// ✅ Good: Use fetchingAtom
+const dataAtom = fetchingAtom("data");
+const isLoading = dataAtom.useLoading();
+const data = dataAtom.useData();
+const error = dataAtom.useError();
+```
+
+### 5. Type Your Atoms
+
+```tsx
+// ❌ Bad: No types
+const userAtom = atom({
+  key: "user",
+  default: {},
+});
+
+// ✅ Good: Explicit types
+type User = { id: number; name: string };
+const userAtom = atom<User>({
+  key: "user",
+  default: { id: 0, name: "" },
+});
+```
+
+## Troubleshooting
+
+### Component Not Re-rendering
+
+**Problem**: Updating atom but component doesn't re-render.
+
+**Solutions:**
+
+1. **Use a hook:**
+
+```tsx
+// ❌ Doesn't re-render
+const value = atom.value;
+
+// ✅ Re-renders
+const value = atom.useValue();
+```
+
+2. **Pass new reference for objects:**
+
+```tsx
+// ❌ Same reference
+atom.update(atom.value);
+
+// ✅ New reference
+atom.update({ ...atom.value });
+```
+
+### SSR Hydration Mismatch
+
+**Problem**: "Hydration failed" error in Next.js.
+
+**Solution**: Use atom Provider:
+
+```tsx
+// ❌ Bad
+function Page() {
+  const user = userAtom.useValue();
+  return <div>{user.name}</div>;
+}
+
+// ✅ Good
+export default function Page() {
+  const user = await fetchUser();
+
+  return (
+    <UserAtomProvider value={user}>
+      <UserProfile />
+    </UserAtomProvider>
+  );
+}
+```
+
+### "use client" Directive Missing
+
+**Problem**: Error in Next.js App Router.
+
+**Solution**: Add "use client" to atom files and components:
+
+```tsx
+"use client"; // Add this!
+
+import { atom } from "@mongez/react-atom";
+
+export const userAtom = atom({ ... });
+```
+
+### Memory Leaks
+
+**Problem**: App slows down over time.
+
+**Solution**: Hooks auto-cleanup, but manual subscriptions need cleanup:
+
+```tsx
+// ✅ Auto-cleanup
+userAtom.useValue();
+
+// ❌ Manual cleanup needed
+useEffect(() => {
+  const sub = userAtom.onChange(() => {});
+  return () => sub.unsubscribe(); // Don't forget!
+}, []);
+```
+
+## Migration Guides
+
+### From Redux + React-Redux
+
+**Redux:**
+
+```tsx
+// store.ts
+const initialState = { user: null };
+
+function userReducer(state = initialState, action) {
+  switch (action.type) {
+    case "SET_USER":
+      return { user: action.payload };
+    default:
+      return state;
+  }
+}
+
+// component
+const user = useSelector((state) => state.user);
+dispatch({ type: "SET_USER", payload: newUser });
+```
+
+**React Atom:**
+
+```tsx
+// atoms.ts
+const userAtom = atom({
+  key: "user",
+  default: null,
+});
+
+// component
+const user = userAtom.useValue();
+userAtom.update(newUser);
+```
+
+**Migration steps:**
+
+1. Replace reducers with atoms
+2. Replace `useSelector` with `atom.useValue()`
+3. Replace `dispatch` with `atom.update()`
+4. Remove Redux provider
+
+### From Zustand
+
+**Zustand:**
+
+```tsx
+const useStore = create((set) => ({
+  count: 0,
+  increment: () => set((state) => ({ count: state.count + 1 })),
+}));
+
+const count = useStore((state) => state.count);
+const increment = useStore((state) => state.increment);
+```
+
+**React Atom:**
+
+```tsx
+const counterAtom = atom({
+  key: "counter",
+  default: 0,
+  actions: {
+    increment() {
+      this.update(this.value + 1);
+    },
+  },
+});
+
+const count = counterAtom.useValue();
+counterAtom.increment();
+```
+
+**Migration steps:**
+
+1. Convert stores to atoms
+2. Move actions to atom actions
+3. Replace `useStore` with atom hooks
+
+### From Jotai
+
+**Jotai:**
+
+```tsx
+const countAtom = atom(0);
+
+const [count, setCount] = useAtom(countAtom);
+```
+
+**React Atom:**
+
+```tsx
+const counterAtom = atom({
+  key: "counter",
+  default: 0,
+});
+
+const [count, setCount] = counterAtom.useState();
+```
+
+**Migration steps:**
+
+1. Add `key` to atoms
+2. Replace `useAtom` with `atom.useState()`
+3. Atoms work outside React (bonus!)
+
+### From Context API
+
+**Context:**
+
+```tsx
+const UserContext = createContext(null);
+
+function App() {
+  const [user, setUser] = useState(null);
+
+  return (
+    <UserContext.Provider value={{ user, setUser }}>
+      <Child />
+    </UserContext.Provider>
+  );
+}
+
+function Child() {
+  const { user } = useContext(UserContext);
+  return <div>{user?.name}</div>;
+}
+```
+
+**React Atom:**
+
+```tsx
+const userAtom = atom({
+  key: "user",
+  default: null,
+});
+
+function App() {
+  return <Child />;
+}
+
+function Child() {
+  const user = userAtom.useValue();
+  return <div>{user?.name}</div>;
+}
+```
+
+**Benefits:**
+
+- No provider needed
+- Works outside components
+- Better performance
+
+## Real-World Examples
+
+### Shopping Cart
+
+```tsx
+type CartItem = {
+  id: number;
+  name: string;
+  price: number;
+  quantity: number;
+};
+
+const cartAtom = atomCollection<CartItem>({
+  key: "cart",
+  default: [],
+  actions: {
+    addItem(item: Omit<CartItem, "quantity">) {
+      const existing = this.get((i) => i.id === item.id);
+
+      if (existing) {
+        this.replace(
+          this.index((i) => i.id === item.id),
+          { ...existing, quantity: existing.quantity + 1 },
+        );
+      } else {
+        this.push({ ...item, quantity: 1 });
+      }
+    },
+    removeItem(id: number) {
+      this.remove((item) => item.id === id);
+    },
+    updateQuantity(id: number, quantity: number) {
+      const index = this.index((i) => i.id === id);
+      const item = this.get(index);
+
+      if (quantity === 0) {
+        this.remove(index);
+      } else {
+        this.replace(index, { ...item, quantity });
+      }
+    },
+    clear() {
+      this.update([]);
+    },
+    get total() {
+      return this.value.reduce(
+        (sum, item) => sum + item.price * item.quantity,
+        0,
+      );
+    },
+  },
+});
+
+function Cart() {
+  const items = cartAtom.useValue();
+  const total = useMemo(() => cartAtom.total, [items]);
+
+  return (
+    <div>
+      {items.map((item) => (
+        <div key={item.id}>
+          {item.name} - ${item.price} x {item.quantity}
+          <button onClick={() => cartAtom.removeItem(item.id)}>Remove</button>
+        </div>
+      ))}
+      <div>Total: ${total}</div>
+    </div>
+  );
+}
+```
+
+### Authentication Flow
+
+```tsx
+type User = {
+  id: number;
+  name: string;
+  email: string;
+  token: string;
+};
+
+const authAtom = atom<User | null>({
+  key: "auth",
+  default: null,
+  actions: {
+    async login(email: string, password: string) {
+      try {
+        const user = await api.login(email, password);
+        this.update(user);
+        localStorage.setItem("token", user.token);
+        return { success: true };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    },
+    logout() {
+      this.update(null);
+      localStorage.removeItem("token");
+    },
+    async loadFromStorage() {
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const user = await api.verifyToken(token);
+          this.update(user);
+        } catch {
+          this.logout();
+        }
+      }
+    },
+  },
+});
+
+function LoginForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const result = await authAtom.login(email, password);
+
+    if (result.success) {
+      navigate("/dashboard");
+    } else {
+      alert(result.error);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input value={email} onChange={(e) => setEmail(e.target.value)} />
       <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
       />
-      <input
-        type="text"
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-      />
-      <button onClick={addPost}>Add Post</button>
+      <button type="submit">Login</button>
+    </form>
+  );
+}
+
+function App() {
+  useEffect(() => {
+    authAtom.loadFromStorage();
+  }, []);
+
+  const user = authAtom.useValue();
+
+  if (!user) return <LoginForm />;
+
+  return <Dashboard />;
+}
+```
+
+### Multi-Step Wizard
+
+```tsx
+type WizardStep = "personal" | "address" | "payment" | "review";
+
+type WizardData = {
+  personal: { name: string; email: string };
+  address: { street: string; city: string };
+  payment: { cardNumber: string };
+};
+
+const wizardAtom = atom<{
+  currentStep: WizardStep;
+  data: Partial<WizardData>;
+}>({
+  key: "wizard",
+  default: {
+    currentStep: "personal",
+    data: {},
+  },
+  actions: {
+    nextStep() {
+      const steps: WizardStep[] = ["personal", "address", "payment", "review"];
+      const currentIndex = steps.indexOf(this.value.currentStep);
+
+      if (currentIndex < steps.length - 1) {
+        this.change("currentStep", steps[currentIndex + 1]);
+      }
+    },
+    prevStep() {
+      const steps: WizardStep[] = ["personal", "address", "payment", "review"];
+      const currentIndex = steps.indexOf(this.value.currentStep);
+
+      if (currentIndex > 0) {
+        this.change("currentStep", steps[currentIndex - 1]);
+      }
+    },
+    updateData<K extends keyof WizardData>(step: K, data: WizardData[K]) {
+      this.merge({
+        data: {
+          ...this.value.data,
+          [step]: data,
+        },
+      });
+    },
+    reset() {
+      this.update(this.defaultValue);
+    },
+  },
+});
+
+function Wizard() {
+  const currentStep = wizardAtom.use("currentStep");
+
+  return (
+    <div>
+      {currentStep === "personal" && <PersonalStep />}
+      {currentStep === "address" && <AddressStep />}
+      {currentStep === "payment" && <PaymentStep />}
+      {currentStep === "review" && <ReviewStep />}
     </div>
   );
 }
@@ -775,84 +1961,26 @@ export default function AddPost() {
 
 ## Change Log
 
-- V5.0.0 (12 May 2024)
-  - React Atom now depends on [Mongez Atom](https://github.com/hassanzohdy/atom) package.
-  - Refactored `openAtom`, `loadingAtom` and `fetchingAtom` functions to use Atom Actions.
-  - Enhanced Documentation and removed any unrelated information to React Atom.
-- V4.0.0 (10 Sept 2023)
-  - Added `register` prop to `AtomProvider` component.
-  - Removed `useWatcher` hook.
-  - `use` now accepts only the key, to get the value use `useValue` hook instead.
-- V3.2.0 (31 Aug 2023)
-  - Enhanced Atom Provider for clone.
-- V3.1.0 (24 Jun 2023)
-  - Added `openAtom`, `loadingAtom` and `fetchingAtom`, functions.
-- V3.0.0 (25 May 2023)
-  - Add Support or SSR.
-- V2.1.0 (21 Mar 2023)
-  - Added `merge` method to atom.
-  - Enhanced `update` typings.
-  - Fixed `default` type to accept empty object.
-  - `useWatcher` is now deprecated, use `use` instead.
-- V2.0.1 (04 Jan 2023)
-  - Fixed atom typings when using anything that is not an object.
-- V2.0.0 (18 Dec 2022)
-  - Removed `useAtom` hook.
-  - Removed `useAtomValue` hook.
-  - Removed `useAtomState` hook.
-  - Removed `useAtomWatch` hook.
-  - Removed `useAtomWatcher` hook.
-  - Removed `getAtomValue` function.
-  - Removed `name` property from atom.
-  - Removed `actions`.
-  - Removed atom change debounce.
-  - Removed atom update debounce.
-  - Added `useState` hook to atom.
-  - Enhanced `atom typings`.
-- V1.6.0 (14 Dec 2022)
-  - Added [use](#use) method: Use atom's value or single value in a callback function.
-  - Enhanced types for objects.
-- V1.5.0 (25 Sept 2022)
-  - Added Atom Actions
-  - Enhanced Atom Update Consistency
-- V1.4.1 (01 August 2022)
-  - `beforeUpdate` now receives the old value as second argument and the atom object as third argument.
-- V1.4.0 (31 July 2022)
-  - Added [atom.addItem](#add-item-to-the-array) method: Add new item to the atom.
-  - Added [atom.removeItem](#remove-item) method: Add new item to the atom.
-  - Added [atom.replaceItem](#replace-item) method: update item in the atom's array.
-  - Added [atom.getItem](#get-item) method: Get an item from the atom's array.
-  - Added [atom.getItemIndex](#get-item) method: Get item index from the atom's array.
-  - Added [atom.map](#atom-map): Map over the atom's values and trigger an update over it.
-  - Added [atom.length](#get-atom-length): Get the length of the atom.
-  - Added [atom.type](#atom-type): Get the atom's value type.
-- V1.3.0 (28 July 2022)
-  - Fixed checking bind on null values.
-  - Added `useValue` method.
-- V1.2.7 (25 July 2022)
-  - Fixed undefined bind value for object methods when called with `atom.get` method.
-- V1.2.6 (25 July 2022)
-- Fixed return type of `Atom.useWatcher`
-- V1.2.5 (25 July 2022)
-  - Added `useWatcher` and `useWatch` embedded in the atom itself.
-- V1.2.4 (6 July 2022)
-- Enhanced Atom Watcher.
-- V1.2.3 (01 July 2022)
-- Enhanced Atom Hooks.
-- V1.2.2 (09 Jun 2022)
-- Enhanced Atom Watcher.
-- V1.2.1 (16 Apr 2022)
-  - Added [get handler function](#get-handler-function).
-  - Disallowed triggering update/changes if called multiple times in the same time.
-- V1.2.0 (25 Apr 2022)
-  - Added atom.watch Function feature.
-  - Added Atom.get Function.
-  - Added Atom.change Function.
-  - Added useAtomWatcher Hook.
-  - Added useAtomWatch Hook.
-- V1.1.0 (25 Apr 2022)
-  - Added [beforeUpdate](#value-mutation-before-update) function.
-
-```
-
-```
+- **V5.1.0** (Added Portal Atom)
+  - Added `portalAtom` helper
+- **V5.0.0** (12 May 2024)
+  - React Atom now depends on [@mongez/atom](https://github.com/hassanzohdy/atom)
+  - Refactored `openAtom`, `loadingAtom`, and `fetchingAtom` to use Atom Actions
+  - Enhanced documentation
+- **V4.0.0** (10 Sept 2023)
+  - Added `register` prop to `AtomProvider`
+  - Removed `useWatcher` hook
+  - `use` now accepts only the key
+- **V3.2.0** (31 Aug 2023)
+  - Enhanced Atom Provider for clone
+- **V3.1.0** (24 Jun 2023)
+  - Added `openAtom`, `loadingAtom`, and `fetchingAtom`
+- **V3.0.0** (25 May 2023)
+  - Added SSR support
+- **V2.1.0** (21 Mar 2023)
+  - Added `merge` method
+  - Enhanced `update` typings
+- **V2.0.0** (18 Dec 2022)
+  - Removed legacy hooks
+  - Added `useState` hook
+  - Enhanced atom typings
