@@ -19,7 +19,10 @@ function reactActions<Value>(data: any): ReactActions<Value> {
     ...data.actions,
     Provider(props) {
       const atom = this as unknown as Atom<Value>;
-      atom.update(props.value as Value);
+      
+      useEffect(() => {
+        atom.update(props.value as Value);
+      }, [props.value]);
 
       return props.children;
     },
