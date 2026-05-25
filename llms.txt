@@ -1,0 +1,31 @@
+# @mongez/react-atom
+
+> React adapter for `@mongez/atom`. Adds `useState` / `useValue` / `use(key)` / `useWatch` / `Provider` to every atom; ships an `AtomStoreProvider` for SSR scoping; includes hydration helpers and preset atoms for toggles, loading flags, fetch state, and modal portals.
+
+Every export ships from the package root. Built on `useSyncExternalStore`, tear-free under React 18 concurrent rendering.
+
+## Docs
+
+- [Overview](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/skills/overview.md): Pitch, install, the hooks every atom carries.
+- [README](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/README.md): Usage and recipes.
+- [Changelog](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/CHANGELOG.md): Release notes.
+
+## Reference
+
+- [Atoms in React](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/skills/atoms.md): `atom(...)` factory, per-atom hooks (`useState`, `useValue`, `use(key)`, `useWatch`, `Provider`).
+- [Preset atoms](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/skills/presets.md): `openAtom`, `loadingAtom`, `fetchingAtom`, `portalAtom`.
+- [SSR & stores](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/skills/ssr.md): `<AtomStoreProvider>`, `useAtom(template | key)`, `useAtomStore()`, `serializeStore`, `<HydrateAtomsScript>`, `readHydration`.
+- [Recipes](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/skills/recipes.md): Toggle/modal patterns, fetch lifecycles, Next.js / Remix / TanStack Start hydration.
+
+## Quick rules
+
+1. **Hooks live on the atom**: `myAtom.useValue()`, `myAtom.useState()`, `myAtom.use("name")`, `myAtom.useWatch("name", cb)`. No `useAtom`/`useAtomValue`/`useSetAtom` distinction — one atom, multiple hooks on it.
+2. **`useAtom(template | key)`** is the *store-scoping* hook (the SSR one), not the read-the-value hook.
+3. **SSR**: wrap the root with `<AtomStoreProvider>` so each request gets its own atom clones. Without it, atoms behave as module-level singletons (fine for client-only SPAs).
+4. **React 18+ only**: `useSyncExternalStore` is required.
+5. **Preset atoms collapse boilerplate** — use them before reaching for custom action atoms.
+
+## Optional
+
+- [Full single-file reference (llms-full.txt)](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/llms-full.txt)
+- [GitHub repository](https://github.com/hassanzohdy/mongez-react-atom)

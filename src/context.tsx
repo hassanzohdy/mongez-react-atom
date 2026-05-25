@@ -1,48 +1,36 @@
 "use client";
 
-import { atomsList, type Atom } from "@mongez/atom";
-import React, { createContext, useContext, useState } from "react";
-import { ReactAtom } from "./types";
-
-export const AtomContext = createContext({});
+import { type Atom } from "@mongez/atom";
+import React from "react";
+import { AtomStoreContext, AtomStoreProvider } from "./store";
 
 /**
- * Get clone of the given atom key
+ * @deprecated Re-export of `AtomStoreContext` from "./store". The context
+ * value type changed from a key→atom record to an `AtomStore` instance; if
+ * you only consumed this via `useAtom(key)` the migration is transparent.
  */
-export function useAtom<T = any>(key: string): ReactAtom<T> {
-  const context = useContext(AtomContext) as any;
+export const AtomContext = AtomStoreContext;
 
-  return context[key];
-}
-
+/**
+ * Backwards-compatible alias for `<AtomStoreProvider>`.
+ *
+ * Maps the legacy `register` (atoms to pre-clone) to `initialAtoms`, and
+ * `defaultValue` (record of initial atom values) to `initialValues`.
+ *
+ * @deprecated Use `<AtomStoreProvider>` from "./store" directly.
+ */
 export function AtomProvider({
-  register = atomsList(),
+  register,
   defaultValue,
   children,
 }: {
   register?: Atom<any>[];
+  defaultValue?: Record<string, unknown>;
   children: React.ReactNode;
-  defaultValue?: any;
 }) {
-  const [currentAtoms] = useState(() => {
-    const atoms = {};
-
-    for (const atom of register) {
-      const newAtom = atom.clone();
-
-      atoms[atom.key] = newAtom;
-
-      if (defaultValue?.[atom.key]) {
-        newAtom.silentUpdate(defaultValue[atom.key]);
-      }
-    }
-
-    return atoms;
-  });
-
-  console.log(currentAtoms);
-
   return (
-    <AtomContext.Provider value={currentAtoms}>{children}</AtomContext.Provider>
+    <AtomStoreProvider initialAtoms={register} initialValues={defaultValue}>
+      {children}
+    </AtomStoreProvider>
   );
 }

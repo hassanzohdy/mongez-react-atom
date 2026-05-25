@@ -70,7 +70,7 @@ export type LoadingAtomActions = {
   toggleLoading: () => void;
 };
 
-export type LoadingAtom = ReactAtom<LoadingAtomActions> & LoadingAtomActions;
+export type LoadingAtom = ReactAtom<boolean, LoadingAtomActions>;
 
 /**
  * Create a loading atom

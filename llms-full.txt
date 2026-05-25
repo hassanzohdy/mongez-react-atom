@@ -1,0 +1,157 @@
+# @mongez/react-atom — full reference
+
+> React adapter for `@mongez/atom`. Every atom carries `useState` / `useValue` / `use(key)` / `useWatch` / `Provider`. `<AtomStoreProvider>` scopes state per SSR request.
+
+## Install
+
+```sh
+yarn add @mongez/react-atom
+# peer: react >= 18, @mongez/atom
+```
+
+## Public exports
+
+```ts
+import {
+  // Atom factories
+  atom,
+  atomCollection,
+
+  // Preset atoms
+  openAtom,
+  loadingAtom,
+  fetchingAtom,
+  portalAtom,
+
+  // SSR / store
+  AtomStoreProvider,
+  AtomStoreContext,
+  useAtom,
+  useAtomStore,
+
+  // Legacy shims (deprecated, kept for migration)
+  AtomContext,                // alias of AtomStoreContext
+  AtomProvider,               // shim over AtomStoreProvider
+
+  // Hydration helpers
+  HydrateAtomsScript,
+  readHydration,
+  serializeSnapshot,
+  serializeStore,
+  DEFAULT_HYDRATION_SCRIPT_ID,
+
+  // Types
+  type ReactAtom,
+  type ReactActions,
+  type OpenAtomActions,
+  type OpenAtomType,
+  type LoadingAtom,
+  type LoadingAtomActions,
+  type FetchingAtomType,
+  type FetchingAtomActions,
+  type AtomPortal,
+  type PortalActions,
+  type AtomStoreProviderProps,
+  type HydrateAtomsScriptProps,
+} from "@mongez/react-atom";
+```
+
+## atom(options)
+
+Same shape as `createAtom` from `@mongez/atom`. Returns a `ReactAtom<V, A>` — a `Atom<V, A>` plus the React-aware actions injected by this package.
+
+### Hooks every atom carries
+
+- `atom.useValue(): V` — subscribe, return whole value.
+- `atom.useState(): [V, (next | (prev) => next) => void]` — like React's useState.
+- `atom.use<K extends keyof V>(key: K): V[K]` — subscribe to one key only.
+- `atom.useWatch<K>(key, cb)` — effect-style watcher.
+- `<atom.Provider value={partial}>` — pushes value into the atom on mount.
+
+All hooks use `useSyncExternalStore`; reads are tear-free under React 18 concurrent rendering. All hooks honor the nearest `<AtomStoreProvider>` — they operate on the store-scoped clone when one is mounted, fall back to the template otherwise.
+
+## atomCollection(options)
+
+React-aware version of `atomCollection` from `@mongez/atom`. Inherits the array helpers (`push`, `unshift`, `pop`, ...) AND the React hooks.
+
+## Preset atoms
+
+### openAtom(key, defaultOpened = false)
+
+```ts
+const m = openAtom("sidebar");
+m.open(); m.close(); m.toggle();
+const opened = m.useOpened();
+```
+
+### loadingAtom(key, defaultLoading = false)
+
+```ts
+const l = loadingAtom("fetching.users");
+l.startLoading(); l.stopLoading(); l.toggleLoading();
+```
+
+### fetchingAtom<DataType, PaginationType>(key, defaultValue?, defaultFetching = true)
+
+Value shape: `{ isLoading, data, error, pagination? }`. Actions: `startLoading`, `stopLoading`, `success(data, pagination?)`, `failed(error)`, `append(data)`, `prepend(data)`. Hooks: `useLoading`, `useData`, `useError`, `usePagination`.
+
+### portalAtom<T>(name, opened = false)
+
+Value: `{ opened: boolean, data: T }`. Actions: `open(data?)`, `close()`, `toggle(data?)`, `useOpened()`, `useData()`. Key is suffixed with `-portal`.
+
+## SSR
+
+### `<AtomStoreProvider>`
+
+```ts
+type AtomStoreProviderProps = {
+  store?: AtomStore;                       // caller-owned if provided
+  initialAtoms?: Atom<any>[];              // pre-register
+  initialValues?: Record<string, unknown>; // silent-update on entry
+  children: React.ReactNode;
+};
+```
+
+- Auto-creates a store if none is passed; destroys it on unmount.
+- A passed-in store is not destroyed automatically (caller owns lifecycle).
+
+### `useAtom`
+
+```ts
+useAtom<V, A>(template: Atom<V, A>): Atom<V, A>;
+useAtom<V>(key: string): Atom<V> | undefined;
+```
+
+Template overload → store-scoped clone (or template itself when no provider). String overload → look up by key in the active store.
+
+### `useAtomStore()`
+
+Returns the active `AtomStore` or `null`.
+
+## Hydration helpers
+
+```ts
+serializeSnapshot(snapshot, options?): string
+serializeStore(store, options?): string
+readHydration(id?: string = DEFAULT_HYDRATION_SCRIPT_ID): Record<string, unknown> | null
+
+DEFAULT_HYDRATION_SCRIPT_ID = "__mongez_atom_state"
+
+<HydrateAtomsScript
+  snapshot={Record | string}
+  id?={string}
+  nonce?={string}
+/>
+```
+
+Serializer protections: `</script>` is escaped to `<\/script>`; U+2028/U+2029 are escaped to ` `/` `. The component uses `dangerouslySetInnerHTML` — safe because the serializer is the only path.
+
+## React version
+
+React 18+ only. `useSyncExternalStore` is required.
+
+## What this package does NOT do
+
+- The atom primitive itself → `@mongez/atom`
+- Server-state caching (query keys, invalidation) → `@mongez/atomic-query`
+- The event bus → `@mongez/events`

@@ -10,78 +10,110 @@ import {
   type CollectionOptions,
   createAtom,
 } from "@mongez/atom";
-import { EventSubscription } from "@mongez/events";
-import { useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useSyncExternalStore,
+} from "react";
+import { useAtom } from "./store";
 import type { ReactActions, ReactAtom } from "./types";
 
+/**
+ * Build the React-aware action bag injected into every atom created via
+ * the `atom()` factory in this package.
+ *
+ * Every hook in here goes through `useAtom(this)` first so that
+ * components rendered inside an `<AtomStoreProvider>` operate on the
+ * store-scoped clone, not the module-level template.
+ *
+ * Subscriptions are wired through `useSyncExternalStore` to keep React 18+
+ * concurrent rendering tear-free.
+ */
 function reactActions<Value>(data: any): ReactActions<Value> {
   return {
     ...data.actions,
+
     Provider(props) {
-      const atom = this as unknown as Atom<Value>;
-      
+      const atom = useAtom(this as unknown as Atom<Value>);
       useEffect(() => {
         atom.update(props.value as Value);
-      }, [props.value]);
-
+      }, [props.value, atom]);
       return props.children;
     },
+
     useWatch(key, callback) {
-      const atom = this as unknown as Atom<Value>;
-
+      const atom = useAtom(this as unknown as Atom<Value>);
       useEffect(() => {
-        const event = atom.watch(key, callback);
-
-        return () => event.unsubscribe();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [key, callback]);
-
-      return atom.get(key);
+        const sub = atom.watch(key, callback);
+        return () => sub.unsubscribe();
+      }, [atom, key, callback]);
     },
+
     useState() {
-      const atom = this as unknown as Atom<Value>;
-      const [value, setValue] = useState(atom.currentValue);
+      const atom = useAtom(this as unknown as Atom<Value>);
 
-      useEffect(() => {
-        const event: EventSubscription = atom.onChange(setValue);
+      const subscribe = useCallback(
+        (onChange: () => void) => {
+          const sub = atom.onChange(onChange);
+          return () => sub.unsubscribe();
+        },
+        [atom]
+      );
+      const getSnapshot = useCallback(() => atom.value, [atom]);
 
-        return () => event.unsubscribe();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, []);
+      const value = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-      return [value, atom.update.bind(atom)];
+      const setValue = useCallback(
+        (next: Value | ((oldValue: Value) => Value)) => {
+          atom.update(next as any);
+        },
+        [atom]
+      );
+
+      return [value, setValue];
     },
+
     useValue() {
-      const atom = this as ReactAtom<Value>;
-      return atom.useState()[0];
+      const atom = useAtom(this as unknown as Atom<Value>);
+
+      const subscribe = useCallback(
+        (onChange: () => void) => {
+          const sub = atom.onChange(onChange);
+          return () => sub.unsubscribe();
+        },
+        [atom]
+      );
+      const getSnapshot = useCallback(() => atom.value, [atom]);
+
+      return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
     },
+
     use<K extends keyof Value>(key: K): Value[K] {
-      const atom = this as ReactAtom<Value>;
-      const value = atom.get(key);
-      const [, setValue] = useState(value);
+      const atom = useAtom(this as unknown as ReactAtom<Value>);
 
-      useEffect(() => {
-        const event = atom.watch(key, setValue);
+      const subscribe = useCallback(
+        (onChange: () => void) => {
+          const sub = atom.watch(key, onChange);
+          return () => sub.unsubscribe();
+        },
+        [atom, key]
+      );
+      const getSnapshot = useCallback(
+        () => atom.get(key),
+        [atom, key]
+      );
 
-        return () => event.unsubscribe();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-      }, [key]);
-
-      return value;
-    },
-    clone() {
-      return atom({
-        ...data,
-        default: (this as unknown as Atom).currentValue,
-      });
+      return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
     },
   };
 }
 
-type ReactAtomAction = ReturnType<typeof reactActions>;
-
 /**
- * Create a new atom
+ * Create a new React-aware atom.
+ *
+ * The returned atom carries hooks (`useState`, `useValue`, `use`, `useWatch`)
+ * and a `<Provider>` component as instance methods. All hooks honor the
+ * nearest `<AtomStoreProvider>` and use `useSyncExternalStore` underneath.
  */
 export function atom<
   Value = any,
@@ -94,7 +126,7 @@ export function atom<
 }
 
 /**
- * Create a react collection atom to work with arrays
+ * Create a React-aware collection atom for working with arrays.
  */
 export function atomCollection<
   Value = any,

@@ -1,0 +1,55 @@
+name: Test
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: React ${{ matrix.react }} / Node ${{ matrix.node }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [18, 20, 22]
+        os: [ubuntu-latest]
+        # Default React for the matrix is whatever package.json devDeps
+        # pin to (currently 18.3). The extra entry below cross-tests
+        # React 19 to catch breakage early.
+        react: ["18"]
+        include:
+          - node: 20
+            os: windows-latest
+            react: "18"
+          - node: 20
+            os: ubuntu-latest
+            react: "19"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      # Override the React major when the matrix asks for one we don't pin.
+      # `useSyncExternalStore` is React 18+, so 16/17 is intentionally
+      # out of scope.
+      - name: Pin React major
+        if: matrix.react != '18'
+        run: |
+          yarn add --dev "react@${{ matrix.react }}" "react-dom@${{ matrix.react }}" "@types/react@${{ matrix.react }}" "@types/react-dom@${{ matrix.react }}"
+
+      - name: Run tests
+        run: yarn test
