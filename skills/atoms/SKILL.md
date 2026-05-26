@@ -82,14 +82,15 @@ function NameOnly() {
 
 ### `useWatch(key, callback)`
 
-Effect-style watcher. Use when you want a side effect (analytics, logging) without re-rendering.
+Effect-style watcher. Use when you want a side effect (analytics, logging) without re-rendering. `useWatch` is itself a hook — call it at the top of your component, NOT inside a `useEffect`.
 
 ```tsx
-useEffect(() => {
+function NameTracker() {
   userAtom.useWatch("name", (next, prev) =>
     analytics.track("name_changed", { from: prev, to: next }),
   );
-}, []);
+  return null;
+}
 ```
 
 ### `Provider`
