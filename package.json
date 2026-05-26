@@ -1,6 +1,6 @@
 {
   "name": "@mongez/react-atom",
-  "version": "6.0.4",
+  "version": "6.0.5",
   "description": "A simple state management tool for React Js.",
   "main": "src/index.ts",
   "author": "hassanzohdy",
@@ -14,7 +14,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@mongez/atom": "^1.0.0"
+    "@mongez/atom": "^6.0.0"
   },
   "peerDependencies": {
     "react": ">=18.0.0"
