@@ -7,15 +7,20 @@ Every export ships from the package root. Built on `useSyncExternalStore`, tear-
 ## Docs
 
 - [Overview](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/skills/overview.md): Pitch, install, the hooks every atom carries.
+  - *Auto-trigger:* Any import from `@mongez/react-atom` or a "what is this package / how does it relate to @mongez/atom" question.
 - [README](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/README.md): Usage and recipes.
 - [Changelog](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/CHANGELOG.md): Release notes.
 
 ## Reference
 
 - [Atoms in React](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/skills/atoms.md): `atom(...)` factory, per-atom hooks (`useState`, `useValue`, `use(key)`, `useWatch`, `Provider`).
+  - *Auto-trigger:* Importing `atom`/`atomCollection` or calling `.useValue`/`.useState`/`.use(key)`/`.useWatch`/`.Provider` on an atom.
 - [Preset atoms](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/skills/presets.md): `openAtom`, `loadingAtom`, `fetchingAtom`, `portalAtom`.
+  - *Auto-trigger:* Importing `openAtom`/`loadingAtom`/`fetchingAtom`/`portalAtom`, or modeling a toggle, loading flag, fetch lifecycle, or modal coordinator.
 - [SSR & stores](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/skills/ssr.md): `<AtomStoreProvider>`, `useAtom(template | key)`, `useAtomStore()`, `serializeStore`, `<HydrateAtomsScript>`, `readHydration`.
+  - *Auto-trigger:* Using `AtomStoreProvider`/`useAtom`/`useAtomStore`/`HydrateAtomsScript`/`readHydration`, or asking about per-request isolation or hydration mismatches.
 - [Recipes](https://raw.githubusercontent.com/hassanzohdy/mongez-react-atom/main/skills/recipes.md): Toggle/modal patterns, fetch lifecycles, Next.js / Remix / TanStack Start hydration.
+  - *Auto-trigger:* Asking for a working end-to-end example combining preset atoms, providers, or hydration — not a single-API reference.
 
 ## Quick rules
 

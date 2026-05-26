@@ -1,7 +1,9 @@
 ---
 name: mongez-react-atom-recipes
-description: Concrete copy-paste recipes for common @mongez/react-atom patterns: toggles, modals with payload, fetch flows, granular subscriptions, SSR hydration, SSR-safe action handlers, and devtools setup.
-when_to_use: User wants a working example of a specific @mongez/react-atom pattern, user asks how to wire up a modal with portalAtom, user asks how to do a fetch flow with fetchingAtom, user asks how to subscribe to a single object key, user asks how to call an action method from an event handler safely under SSR, user wants to enable Redux DevTools for atoms.
+description: |
+  Concrete copy-paste recipes for common `@mongez/react-atom` patterns: toggles, modals with payload, fetch flows, granular subscriptions, SSR hydration, SSR-safe action handlers, and devtools setup.
+  TRIGGER when: code mixes preset atoms (`openAtom`, `portalAtom`, `fetchingAtom`) with handlers, `AtomStoreProvider` + `HydrateAtomsScript` + `readHydration`, or calls `useAtom(template)` from an event handler; user asks "how do I wire up a modal with portalAtom", "how do I do a fetch flow with fetchingAtom", "how do I subscribe to a single object key", "how do I call an action method safely under SSR", or "how do I enable Redux DevTools for atoms"; user wants a working end-to-end example, not just an API description; typical import `import { openAtom, portalAtom, fetchingAtom, useAtom } from "@mongez/react-atom"`.
+  SKIP: a single-API reference (use `mongez-react-atom-atoms`, `mongez-react-atom-presets`, or `mongez-react-atom-ssr` instead — recipes is for combined patterns); the underlying framework-agnostic atom primitive lives in `@mongez/atom`; server-state caching with query keys belongs in `@mongez/atomic-query`.
 ---
 # Recipes
 

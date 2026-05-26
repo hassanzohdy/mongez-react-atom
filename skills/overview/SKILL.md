@@ -1,7 +1,9 @@
 ---
 name: mongez-react-atom-overview
-description: High-level overview of @mongez/react-atom — what it exports, how its React hooks and AtomStoreProvider work, and where it fits relative to @mongez/atom and other packages.
-when_to_use: User asks what @mongez/react-atom is or how it works, user sees an import from "@mongez/react-atom" and wants to understand the package, user asks which hooks an atom exposes (useValue/useState/use/useWatch/Provider), user asks about React 18 useSyncExternalStore integration, user wants to understand AtomStoreProvider scope boundaries.
+description: |
+  High-level overview of `@mongez/react-atom` — what it exports, how its React hooks and `AtomStoreProvider` work, and where it fits relative to `@mongez/atom` and other packages.
+  TRIGGER when: code imports `atom`, `atomCollection`, `openAtom`, `loadingAtom`, `fetchingAtom`, `portalAtom`, `AtomStoreProvider`, `AtomStoreContext`, `useAtom`, `useAtomStore`, `HydrateAtomsScript`, `readHydration`, `serializeStore`, `serializeSnapshot`, `ReactAtom`, or `ReactActions` from `@mongez/react-atom`; user asks "what is @mongez/react-atom", "which hooks does an atom expose", "how does it relate to @mongez/atom", or "does it work with React 18 useSyncExternalStore"; typical import `import { atom, AtomStoreProvider } from "@mongez/react-atom"`.
+  SKIP: deep-dives on a specific feature — atom factory and per-atom hooks use `mongez-react-atom-atoms`, preset atoms use `mongez-react-atom-presets`, SSR/hydration uses `mongez-react-atom-ssr`, copy-paste flows use `mongez-react-atom-recipes`; the framework-agnostic atom primitive lives in `@mongez/atom`; server-state caching belongs in `@mongez/atomic-query`.
 ---
 # Overview
 

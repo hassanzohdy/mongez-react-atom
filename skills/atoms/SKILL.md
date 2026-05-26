@@ -1,7 +1,9 @@
 ---
 name: mongez-react-atom-atoms
-description: How to create atoms and atomCollections in React and use their per-instance hooks (useValue, useState, use, useWatch, Provider) and custom actions.
-when_to_use: User calls atom() or atomCollection() from "@mongez/react-atom", user uses any per-atom hook (useValue/useState/use/useWatch) or the atom's Provider component, user defines custom actions on a React atom, user wants granular per-key subscriptions with use(), user asks about the difference between useValue and useState or when to prefer each.
+description: |
+  How to create atoms and atomCollections in React and use their per-instance hooks (`useValue`, `useState`, `use`, `useWatch`, `Provider`) and custom actions.
+  TRIGGER when: code imports `atom`, `atomCollection`, or `useAtom` from `@mongez/react-atom`; code calls `.useValue()`, `.useState()`, `.use(key)`, `.useWatch(key, cb)`, or renders `<someAtom.Provider>`; user asks "how do I create an atom in React", "what's the difference between useValue and useState", "how do I subscribe to one key only", or "how do I add a custom action to a React atom"; typical import `import { atom, atomCollection } from "@mongez/react-atom"`.
+  SKIP: framework-agnostic atom primitive (`createAtom`, `createAtomCollection`) — that lives in `@mongez/atom`, the core layer this package sits on top of; preset-atom shorthands (`openAtom`/`loadingAtom`/`fetchingAtom`/`portalAtom`) use `mongez-react-atom-presets`; per-request SSR scoping and hydration use `mongez-react-atom-ssr`; copy-paste end-to-end flows use `mongez-react-atom-recipes`.
 ---
 # Atoms in React
 

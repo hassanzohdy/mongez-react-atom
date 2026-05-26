@@ -58,6 +58,9 @@ import {
 
 ## atom(options)
 
+> **Auto-trigger:** code imports `atom`, `atomCollection`, or `useAtom` from `@mongez/react-atom`; code calls `.useValue()`, `.useState()`, `.use(key)`, `.useWatch(key, cb)`, or renders `<someAtom.Provider>`; user asks "how do I create an atom in React", "what's the difference between useValue and useState", "how do I subscribe to one key only", or "how do I add a custom action to a React atom"; typical import `import { atom, atomCollection } from "@mongez/react-atom"`.
+> **Skip when:** framework-agnostic atom primitive (`createAtom`, `createAtomCollection`) — that lives in `@mongez/atom`, the core layer this package sits on top of; preset-atom shorthands (`openAtom`/`loadingAtom`/`fetchingAtom`/`portalAtom`) use `mongez-react-atom-presets`; per-request SSR scoping and hydration use `mongez-react-atom-ssr`; copy-paste end-to-end flows use `mongez-react-atom-recipes`.
+
 Same shape as `createAtom` from `@mongez/atom`. Returns a `ReactAtom<V, A>` — a `Atom<V, A>` plus the React-aware actions injected by this package.
 
 ### Hooks every atom carries
@@ -75,6 +78,9 @@ All hooks use `useSyncExternalStore`; reads are tear-free under React 18 concurr
 React-aware version of `atomCollection` from `@mongez/atom`. Inherits the array helpers (`push`, `unshift`, `pop`, ...) AND the React hooks.
 
 ## Preset atoms
+
+> **Auto-trigger:** code imports or calls `openAtom`, `loadingAtom`, `fetchingAtom`, or `portalAtom` from `@mongez/react-atom`; code uses `useOpened`, `useLoading`, `useData`, `useError`, `usePagination`, `startLoading`, `stopLoading`, `toggleLoading`, `success`, `failed`, `append`, `prepend`, or `toggle` methods on a preset atom; user asks "how do I make a toggle / open-close atom", "how do I model a loading flag", "how do I do a fetch lifecycle with isLoading/data/error", or "how do I coordinate a modal/drawer"; typical import `import { openAtom, portalAtom } from "@mongez/react-atom"`.
+> **Skip when:** hand-rolling a custom action atom from scratch — use `mongez-react-atom-atoms`; richer cache-keyed server state (invalidation, refetch on focus) belongs in `@mongez/atomic-query`, not `fetchingAtom`; SSR scoping/hydration of preset atoms still uses `mongez-react-atom-ssr`; end-to-end flow examples use `mongez-react-atom-recipes`.
 
 ### openAtom(key, defaultOpened = false)
 
@@ -100,6 +106,9 @@ Value shape: `{ isLoading, data, error, pagination? }`. Actions: `startLoading`,
 Value: `{ opened: boolean, data: T }`. Actions: `open(data?)`, `close()`, `toggle(data?)`, `useOpened()`, `useData()`. Key is suffixed with `-portal`.
 
 ## SSR
+
+> **Auto-trigger:** code imports `AtomStoreProvider`, `AtomStoreContext`, `useAtom`, `useAtomStore`, `HydrateAtomsScript`, `readHydration`, `serializeStore`, `serializeSnapshot`, `DEFAULT_HYDRATION_SCRIPT_ID`, `AtomStoreProviderProps`, or `HydrateAtomsScriptProps` from `@mongez/react-atom`; user asks "how do I avoid hydration mismatches with atoms in Next.js App Router", "how do I isolate atom state per SSR request", "how do I pre-fill atoms on the server", or "how do I call an action method safely under SSR"; typical import `import { AtomStoreProvider, HydrateAtomsScript, readHydration } from "@mongez/react-atom"`.
+> **Skip when:** client-only single-page apps where module-level singletons are fine — no provider needed, so reach for `mongez-react-atom-atoms` instead; preset atoms in a non-SSR context use `mongez-react-atom-presets`; the underlying store primitive `createAtomStore` and `snapshot()` itself live in `@mongez/atom`, the core layer this package wraps; mixed end-to-end flows use `mongez-react-atom-recipes`.
 
 ### `<AtomStoreProvider>`
 
