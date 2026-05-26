@@ -41,7 +41,7 @@ jobs:
           cache: yarn
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install
 
       # Override the React major when the matrix asks for one we don't pin.
       # `useSyncExternalStore` is React 18+, so 16/17 is intentionally
