@@ -12,8 +12,35 @@ description: |
 ## Install
 
 ```sh
+# npm
+npm install @mongez/react-atom
+
+# yarn
 yarn add @mongez/react-atom
-# peer: react >= 18, @mongez/atom
+
+# pnpm
+pnpm add @mongez/react-atom
+```
+
+Peer: `react >= 18`. `@mongez/atom` is installed automatically.
+
+## Quick example
+
+Every atom carries its own hooks — `useValue`, `useState`, `use(key)`, `useWatch`. No `useAtomValue` / `useSetAtom` split, no provider needed for the simple case:
+
+```tsx
+import { atom } from "@mongez/react-atom";
+
+const counterAtom = atom({ key: "counter", default: 0 });
+
+function Counter() {
+  const count = counterAtom.useValue();
+  return (
+    <button onClick={() => counterAtom.update(count + 1)}>
+      Count: {count}
+    </button>
+  );
+}
 ```
 
 ## Import pattern
