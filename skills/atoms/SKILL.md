@@ -140,4 +140,4 @@ function Component() {
 }
 ```
 
-The per-atom hooks (`useValue`, `useState`, `use`, `useWatch`) ALREADY do this resolution internally — you don't need to call `useAtom(template)` explicitly unless you're invoking action methods on the scoped clone from an event handler. See [`ssr.md`](./ssr.md).
+The per-atom hooks (`useValue`, `useState`, `use`, `useWatch`) ALREADY do this resolution internally — you don't need to call `useAtom(template)` explicitly unless you're invoking action methods on the scoped clone from an event handler. See [`../ssr/SKILL.md`](../ssr/SKILL.md).
