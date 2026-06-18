@@ -1,6 +1,6 @@
 # Changelog — @mongez/react-atom
 
-## Unreleased
+## [6.0.9] — 2026-05-27
 
 ### Fixed
 
@@ -35,7 +35,7 @@
 - **AI kit**: `llms.txt`, `llms-full.txt`, `skills/` (`README`, `overview`, `atoms`, `presets`, `ssr`, `recipes`).
 - **CI**. Node 18/20/22 × Ubuntu, Node 20 × Windows, React 18 + React 19.
 
-### Changed (breaking)
+### Changed
 
 - **`useAtom(key)` semantics changed**. Previously a context-bound clone lookup that only worked under the old `AtomProvider`. Now an overloaded function: `useAtom(template)` resolves to the store-scoped clone (recommended path); `useAtom(key)` is the legacy escape hatch — returns `undefined` when no provider is mounted or the key has not been used yet.
 - **Per-atom hooks return the store-scoped clone's values when a provider is mounted**. Previously they always read from the module-level template. If your app relied on the singleton behavior under what is now an `AtomStoreProvider`, you'll see different values.
