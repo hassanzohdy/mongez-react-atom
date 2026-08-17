@@ -2,8 +2,6 @@
 name: mongez-react-atom-presets
 description: |
   Pre-built atom shapes — `openAtom` (boolean toggle), `loadingAtom` (loading flag), `fetchingAtom` (full fetch lifecycle), and `portalAtom` (modal/drawer coordinator) — and when to reach for each.
-  TRIGGER when: code imports or calls `openAtom`, `loadingAtom`, `fetchingAtom`, or `portalAtom` from `@mongez/react-atom`; code uses `useOpened`, `useLoading`, `useData`, `useError`, `usePagination`, `startLoading`, `stopLoading`, `toggleLoading`, `success`, `failed`, `append`, `prepend`, or `toggle` methods on a preset atom; user asks "how do I make a toggle / open-close atom", "how do I model a loading flag", "how do I do a fetch lifecycle with isLoading/data/error", or "how do I coordinate a modal/drawer"; typical import `import { openAtom, portalAtom } from "@mongez/react-atom"`.
-  SKIP: hand-rolling a custom action atom from scratch — use `mongez-react-atom-atoms`; richer cache-keyed server state (invalidation, refetch on focus) belongs in `@mongez/atomic-query`, not `fetchingAtom`; SSR scoping/hydration of preset atoms still uses `mongez-react-atom-ssr`; end-to-end flow examples use `mongez-react-atom-recipes`.
 ---
 # Preset atoms
 

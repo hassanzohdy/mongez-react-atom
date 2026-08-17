@@ -41,6 +41,20 @@ describe("serializeSnapshot", () => {
     });
   });
 
+  it("escapes <!-- so the HTML script-data parser can't be desynchronized", () => {
+    const out = serializeSnapshot({
+      bio: "hello <!-- comment --> world",
+    });
+    // The literal `<!--` must not survive, since it would switch the HTML
+    // parser into "script data escaped state" and let it swallow the real
+    // closing </script> tag that follows this payload.
+    expect(out).not.toContain("<!--");
+    // But the JSON must still round-trip back to the original string.
+    expect(JSON.parse(out.replace(/<\\!--/g, "<!--"))).toEqual({
+      bio: "hello <!-- comment --> world",
+    });
+  });
+
   it("escapes U+2028 / U+2029 so the payload is valid JS string-literal content", () => {
     const ls = String.fromCharCode(0x2028);
     const ps = String.fromCharCode(0x2029);

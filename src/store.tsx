@@ -125,8 +125,40 @@ export function useAtom<V, A extends Record<string, any> = {}>(
 export function useAtom<V = any>(key: string): Atom<V> | undefined;
 export function useAtom(arg: Atom<any> | string): Atom<any> | undefined {
   const store = useContext(AtomStoreContext);
+
+  if (!store) {
+    warnIfServerSideSingletonFallback();
+  }
+
   if (typeof arg === "string") {
     return store?.get(arg);
   }
   return store ? store.use(arg) : arg;
+}
+
+/**
+ * The singleton fallback (no `<AtomStoreProvider>` mounted) is only safe in
+ * a browser: one process, one user. On a Node/SSR server it means every
+ * concurrent request reads and writes the same shared atom object — a
+ * cross-request state leak. There's no way to *prevent* the fallback here
+ * without breaking the documented client-only usage, so instead we warn
+ * loudly, once per process, whenever it's hit outside a browser.
+ */
+let hasWarnedAboutServerSideSingletonFallback = false;
+
+function warnIfServerSideSingletonFallback(): void {
+  if (typeof document !== "undefined") return;
+  if (hasWarnedAboutServerSideSingletonFallback) return;
+  if (process.env.NODE_ENV === "production") return;
+
+  hasWarnedAboutServerSideSingletonFallback = true;
+
+  // eslint-disable-next-line no-console
+  console.warn(
+    "[@mongez/react-atom] An atom hook ran without a mounted <AtomStoreProvider> " +
+      "while rendering outside a browser (no `document`). It fell back to the " +
+      "module-level singleton atom, which is shared by every concurrent request " +
+      "on this server — one request's state can leak into another's. Wrap your " +
+      "SSR render tree in <AtomStoreProvider> to give each request its own store."
+  );
 }

@@ -1,6 +1,6 @@
 import { act, render, renderHook } from "@testing-library/react";
 import React from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { atoms, createAtomStore } from "@mongez/atom";
 import { atom } from "../react-atom";
 import { AtomStoreProvider, useAtom, useAtomStore } from "../store";
@@ -174,6 +174,30 @@ describe("useAtom (template form)", () => {
     expect(result.current!.key.startsWith("resolved.with-provider.clone.")).toBe(
       true
     );
+  });
+
+  it("warns when the singleton fallback is hit outside a browser (no document)", async () => {
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const counter = atom({ key: "resolved.no-document", default: 0 });
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const originalDocument = globalThis.document;
+
+    function ReadsAtom() {
+      useAtom(counter);
+      return null;
+    }
+
+    try {
+      // @ts-expect-error simulate a non-browser (SSR/Node) environment
+      delete globalThis.document;
+      renderToStaticMarkup(<ReadsAtom />);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("<AtomStoreProvider>")
+      );
+    } finally {
+      globalThis.document = originalDocument;
+      warnSpy.mockRestore();
+    }
   });
 });
 

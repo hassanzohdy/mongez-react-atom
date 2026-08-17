@@ -25,11 +25,16 @@ export const DEFAULT_HYDRATION_SCRIPT_ID = "__mongez_atom_state";
 
 /**
  * Build a JSON string suitable for embedding inside an HTML `<script>`
- * tag. Two safety steps beyond a plain `JSON.stringify`:
+ * tag. Three safety steps beyond a plain `JSON.stringify`:
  *
  *   1. The closing tag sequence `</` is escaped to `<\/` so an atom value
  *      containing literal HTML cannot break out of the script element.
- *   2. The U+2028 / U+2029 line separators (which are valid JSON but not
+ *   2. The `<!--` sequence is escaped so the HTML parser's "script data
+ *      state" isn't switched into "script data escaped state" — left
+ *      unescaped, a literal `<!--` in the payload can make the *next*
+ *      `</script>` (the real one React emits) be swallowed as still-being
+ *      data instead of closing the tag.
+ *   3. The U+2028 / U+2029 line separators (which are valid JSON but not
  *      valid JavaScript string literals) are escaped.
  */
 export function serializeSnapshot(
@@ -52,6 +57,7 @@ export function serializeSnapshot(
   );
   return json
     .replace(/<\/(script)/gi, "<\\/$1")
+    .replace(/<!--/g, "<\\!--")
     .replace(/\u2028/g, "\\u2028")
     .replace(/\u2029/g, "\\u2029");
 }

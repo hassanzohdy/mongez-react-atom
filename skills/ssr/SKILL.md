@@ -2,8 +2,6 @@
 name: mongez-react-atom-ssr
 description: |
   How to use `AtomStoreProvider`, `useAtom`, `useAtomStore`, and the hydration utilities (`HydrateAtomsScript`, `readHydration`, `serializeStore`, `serializeSnapshot`) for SSR-safe, per-request atom isolation and client hydration.
-  TRIGGER when: code imports `AtomStoreProvider`, `AtomStoreContext`, `useAtom`, `useAtomStore`, `HydrateAtomsScript`, `readHydration`, `serializeStore`, `serializeSnapshot`, `DEFAULT_HYDRATION_SCRIPT_ID`, `AtomStoreProviderProps`, or `HydrateAtomsScriptProps` from `@mongez/react-atom`; user asks "how do I avoid hydration mismatches with atoms in Next.js App Router", "how do I isolate atom state per SSR request", "how do I pre-fill atoms on the server", or "how do I call an action method safely under SSR"; typical import `import { AtomStoreProvider, HydrateAtomsScript, readHydration } from "@mongez/react-atom"`.
-  SKIP: client-only single-page apps where module-level singletons are fine — no provider needed, so reach for `mongez-react-atom-atoms` instead; preset atoms in a non-SSR context use `mongez-react-atom-presets`; the underlying store primitive `createAtomStore` and `snapshot()` itself live in `@mongez/atom`, the core layer this package wraps; mixed end-to-end flows use `mongez-react-atom-recipes`.
 ---
 # SSR & stores
 
@@ -72,7 +70,7 @@ readHydration(id?: string): Record<string, unknown> | null
 />
 ```
 
-- `serializeSnapshot` / `serializeStore` produce a string safe to embed in `<script type="application/json">`: `</script>` and U+2028/U+2029 are escaped.
+- `serializeSnapshot` / `serializeStore` produce a string safe to embed in `<script type="application/json">`: `</script>`, `<!--` and U+2028/U+2029 are escaped. (`<!--` matters because it flips the HTML parser into script-data-escaped state, which would make the real closing `</script>` be swallowed as data.)
 - `<HydrateAtomsScript>` renders an inline JSON script tag. Place it once per `<AtomStoreProvider>` you want to hydrate.
 - `readHydration()` is the client-side companion: parses the JSON out of the script tag. Returns `null` if missing or malformed.
 

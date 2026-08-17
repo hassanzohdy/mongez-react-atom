@@ -153,7 +153,7 @@ DEFAULT_HYDRATION_SCRIPT_ID = "__mongez_atom_state"
 />
 ```
 
-Serializer protections: `</script>` is escaped to `<\/script>`; U+2028/U+2029 are escaped to ` `/` `. The component uses `dangerouslySetInnerHTML` — safe because the serializer is the only path.
+Serializer protections: `</script>` is escaped to `<\/script>`; `<!--` is escaped to `<\!--` (it would otherwise flip the parser into script-data-escaped state and swallow the real closing tag); U+2028/U+2029 are escaped to ` `/` `. The component uses `dangerouslySetInnerHTML` — safe because the serializer is the only path.
 
 ## React version
 

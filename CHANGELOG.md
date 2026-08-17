@@ -1,5 +1,15 @@
 # Changelog — @mongez/react-atom
 
+## [6.0.10] — 2026-08-17
+
+### Security
+
+- **`serializeSnapshot` now escapes `<!--`** (`src/ssr.tsx`). The serializer already escaped `</script`, which stops the obvious breakout, but `<!--` inside the payload switches the HTML parser from "script data state" into "script data escaped state" — and in that state the *real* `</script>` React emits next is swallowed as data rather than closing the element. Everything after it, up to the next `</script>`, is then parsed as script. Since a snapshot is by definition server state (records, user input, API values) embedded into the page, that's an XSS path that the `</script` escape alone did not close. `<!--` is now escaped to `<\!--` alongside the existing `</script` and U+2028/U+2029 escapes; the JSON parses identically.
+
+### Added
+
+- **Development warning when an atom hook falls back to the module-level singleton outside a browser** (`src/store.tsx`). Without a mounted `<AtomStoreProvider>`, hooks use the singleton atom — correct for a client-only app (one process, one user), but on an SSR server it means every concurrent request reads and writes the *same* object, so one user's state can be rendered into another user's page. The fallback can't simply be removed without breaking the documented client-only usage, so it now warns once per process when it is hit with no `document` present. Silent in the browser and in `NODE_ENV=production`; no behaviour change either way.
+
 ## [6.0.9] — 2026-05-27
 
 ### Fixed
