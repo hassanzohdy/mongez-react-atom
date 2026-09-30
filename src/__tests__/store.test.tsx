@@ -111,7 +111,7 @@ describe("AtomStoreProvider", () => {
     expect(seen.name).toBe("Hydrated");
   });
 
-  it("destroys auto-created stores on unmount", () => {
+  it("destroys auto-created stores on unmount", async () => {
     const counter = atom({ key: "store.cleanup", default: 0 });
 
     let storeRef: any = null;
@@ -130,6 +130,8 @@ describe("AtomStoreProvider", () => {
 
     expect(storeRef?.has("store.cleanup")).toBe(true);
     unmount();
+    // The destroy is deferred by a tick (StrictMode safety).
+    await new Promise(resolve => setTimeout(resolve, 5));
     expect(storeRef?.has("store.cleanup")).toBe(false);
   });
 
@@ -176,10 +178,10 @@ describe("useAtom (template form)", () => {
     );
   });
 
-  it("warns when the singleton fallback is hit outside a browser (no document)", async () => {
+  it("throws on a server (no document) when no provider is mounted", async () => {
     const { renderToStaticMarkup } = await import("react-dom/server");
     const counter = atom({ key: "resolved.no-document", default: 0 });
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const originalDocument = globalThis.document;
 
     function ReadsAtom() {
@@ -190,13 +192,40 @@ describe("useAtom (template form)", () => {
     try {
       // @ts-expect-error simulate a non-browser (SSR/Node) environment
       delete globalThis.document;
-      renderToStaticMarkup(<ReadsAtom />);
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("<AtomStoreProvider>")
+
+      expect(() => renderToStaticMarkup(<ReadsAtom />)).toThrowError(
+        /Atom "resolved.no-document".*<AtomStoreProvider>/s
       );
     } finally {
       globalThis.document = originalDocument;
-      warnSpy.mockRestore();
+      errorSpy.mockRestore();
+    }
+  });
+
+  it("throws on a server even when NODE_ENV is production", async () => {
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const counter = atom({ key: "resolved.no-document.prod", default: 0 });
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const originalDocument = globalThis.document;
+    const originalEnv = process.env.NODE_ENV;
+
+    function ReadsAtom() {
+      (counter as any).useValue();
+      return null;
+    }
+
+    try {
+      // @ts-expect-error simulate a non-browser (SSR/Node) environment
+      delete globalThis.document;
+      process.env.NODE_ENV = "production";
+
+      expect(() => renderToStaticMarkup(<ReadsAtom />)).toThrowError(
+        /resolved.no-document.prod/
+      );
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      globalThis.document = originalDocument;
+      errorSpy.mockRestore();
     }
   });
 });

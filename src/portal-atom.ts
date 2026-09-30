@@ -74,10 +74,10 @@ export function portalAtom<T = any>(name: string, opened: boolean = false) {
         });
       },
       useOpened() {
-        return (this as ReactAtom).use("opened");
+        return (this as unknown as ReactAtom).use("opened");
       },
       useData() {
-        return (this as ReactAtom).use("data");
+        return (this as unknown as ReactAtom).use("data");
       },
     },
   }) as AtomPortal<T>;

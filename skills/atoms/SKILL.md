@@ -131,7 +131,7 @@ const user = auth.use("user");
 ```tsx
 function Component() {
   // `useAtom(template)` resolves to the active store's scoped clone.
-  // Without a provider, it returns the template itself (singleton mode).
+  // Without a provider, it returns the template itself in a browser (singleton mode); on a server it throws.
   const scoped = useAtom(userAtom);
   const value = scoped.useValue();   // tear-free read
   return <span>{value.name}</span>;

@@ -192,7 +192,7 @@ export function fetchingAtom<DataType = any, PaginationType = any>(
       usePagination() {
         return (this as unknown as ReactAtom).use("pagination");
       },
-      success(data, pagination?: PaginationType) {
+      success(data: DataType, pagination?: PaginationType) {
         this.merge({
           isLoading: false,
           data,
@@ -213,7 +213,7 @@ export function fetchingAtom<DataType = any, PaginationType = any>(
           data: newData as DataType,
         });
       },
-      failed(error) {
+      failed(error: ReactNode) {
         this.merge({
           isLoading: false,
           error,

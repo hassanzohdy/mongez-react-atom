@@ -71,7 +71,7 @@ Same shape as `createAtom` from `@mongez/atom`. Returns a `ReactAtom<V, A>` — 
 - `atom.useWatch<K>(key, cb)` — effect-style watcher.
 - `<atom.Provider value={partial}>` — pushes value into the atom on mount.
 
-All hooks use `useSyncExternalStore`; reads are tear-free under React 18 concurrent rendering. All hooks honor the nearest `<AtomStoreProvider>` — they operate on the store-scoped clone when one is mounted, fall back to the template otherwise.
+All hooks use `useSyncExternalStore`; reads are tear-free under React 18 concurrent rendering. All hooks honor the nearest `<AtomStoreProvider>` — they operate on the store-scoped clone when one is mounted, fall back to the template in a browser otherwise. With no provider on a server (no `document`) they throw an error naming the atom key. `getServerSnapshot` returns the store's hydrated value, frozen at the first read, so hydration matches the server HTML.
 
 ## atomCollection(options)
 
@@ -123,6 +123,10 @@ type AtomStoreProviderProps = {
 
 - Auto-creates a store if none is passed; destroys it on unmount.
 - A passed-in store is not destroyed automatically (caller owns lifecycle).
+- The auto-created store is destroyed a tick after unmount, and not at all if the provider mounts again first (StrictMode-safe).
+- Stores seed new clones from the atom's default value, never from the template's current value.
+- `useLocalAtom(options)` creates a per-instance atom with `register: false` (key suffixed `.local.<n>`); it ignores the provider, needs none on the server, and is destroyed after unmount. `atom({ register: false })` does the same outside a hook.
+- `persist` on `atom()` defaults to `persistHydration: "deferred"`: storage is read in an effect after mount, never at creation or on the server. Pass `"immediate"` to read at creation.
 
 ### `useAtom`
 

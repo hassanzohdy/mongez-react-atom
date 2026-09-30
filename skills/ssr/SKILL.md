@@ -28,7 +28,9 @@ type AtomStoreProviderProps = {
 };
 ```
 
-- An auto-created store is destroyed on unmount.
+- An auto-created store is destroyed a tick after unmount, and not at all if the provider mounts again first, so React StrictMode's simulated remount keeps the hydrated store.
+- On a server (no `document`), any atom hook with no provider above it throws, naming the atom key. Wrap the page or layout in `<AtomStoreProvider>`.
+- New clones seed from the atom's `default` (or `initialValues`), never from the template's current value.
 - A `store` passed via props is caller-owned (NOT destroyed by the provider).
 - `initialValues` are applied via `silentUpdate` so the first render of subscribers sees the hydrated values; no flash.
 
@@ -37,7 +39,7 @@ type AtomStoreProviderProps = {
 Two overloads.
 
 ```ts
-useAtom(template: Atom<V, A>): Atom<V, A>            // → store-scoped clone (or the template if no provider)
+useAtom(template: Atom<V, A>): Atom<V, A>            // → store-scoped clone (the template in a browser with no provider; throws on a server with no provider)
 useAtom(key: string): Atom<V> | undefined             // → scoped clone by key, or undefined
 ```
 
@@ -50,7 +52,17 @@ function LogoutButton() {
 }
 ```
 
-The string overload is a legacy escape hatch — prefer the template overload.
+Resolution is idempotent: `useAtom(template).useValue()` and `template.useValue()` use the same clone, and an atom that is already a scoped clone comes back as this store's clone. The string overload is a legacy escape hatch — prefer the template overload.
+
+## Hydration correctness
+
+- `getServerSnapshot` returns the store's hydrated value, frozen at the first read, so the first client render matches the server HTML even if effects change the store during hydration.
+- `persist: true` on `atom()` is read after mount (`persistHydration: "deferred"`), never at creation and never on the server. Scoped clones are not persisted.
+- `use("key")` and `watch` fire for atoms declared with `default: null` once they hold an object.
+
+## Per-instance state
+
+`useLocalAtom({ key, default })` (or `atom({ ..., register: false })`) makes an atom that stays out of the global registry, ignores the provider and needs none on the server. `useLocalAtom` suffixes the key with `.local.<n>` so instances never share events and destroys the atom after unmount.
 
 ## `useAtomStore()`
 

@@ -1,5 +1,31 @@
 # Migration — @mongez/react-atom
 
+## 6.x → 7.0
+
+`@mongez/atom@^7.0.0` is a direct dependency, so a normal upgrade pulls it in. Four things change:
+
+1. **Server renders need a provider.** On a server (no `document`), hooks throw when no `<AtomStoreProvider>` is mounted; the error names the atom key. The old singleton fallback, which only warned and was silent in production, is gone. Wrap the tree:
+
+   ```tsx
+   renderToString(
+     <AtomStoreProvider>
+       <App />
+     </AtomStoreProvider>,
+   );
+   ```
+
+   Atoms created with `register: false` (and `useLocalAtom`) never throw. Browsers keep the singleton fallback.
+
+2. **`persistHydration` defaults to `"deferred"`.** A persisted atom no longer reads storage at creation; the stored value is applied after mount, one commit later, so the first client render matches the server. To keep the old behavior in a client-only app, set it per atom:
+
+   ```ts
+   const themeAtom = atom({ key: "theme", default: "light", persist: true, persistHydration: "immediate" });
+   ```
+
+3. **Provider store destruction is deferred by one tick.** An auto-created store is destroyed a tick after the provider unmounts, and not at all if it mounts again first (StrictMode). Stores you pass via `store` are never destroyed by the provider.
+
+4. **`@mongez/atom` `^7.0.0` is required.** If you pin `@mongez/atom` yourself, raise it.
+
 ## 5.x → 6.0 (upcoming)
 
 The headline change is **React 18 is now the minimum**: hooks are rebuilt on `useSyncExternalStore`, which closes the React 18 concurrent-rendering tearing window. There are a few API surface shifts; the rest is fixes that you'll only notice if you were relying on the old buggy behavior.

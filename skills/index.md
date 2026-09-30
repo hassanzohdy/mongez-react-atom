@@ -16,5 +16,7 @@ The React layer over @mongez/atom. Hooks are instance methods on the atom (`myAt
 - Create atoms with this package's `atom` and `atomCollection` in React code so they carry the hooks; @mongez/atom's `createAtom` and `atomCollection` return atoms without them.
 - `derive`, persistence and devtools come from @mongez/atom; see its skills.
 - `useValue()` subscribes to the whole value; `.use("key")` subscribes to one property of an object atom, so changes to other properties do not re-render the component.
-- Without an `AtomStoreProvider`, atoms are module singletons. On a server that leaks state between requests, so wrap each request.
+- Without an `AtomStoreProvider`, atoms are module singletons in a browser. On a server the hooks throw instead, because the singleton would leak state between requests; wrap each request.
+- Per-component-instance state: `useLocalAtom({ key, default })` or `atom({ register: false })` (no registry entry, no provider needed).
+- `persist` on `atom()` is read after mount by default (`persistHydration: "deferred"`), so SSR and the first client render agree.
 - Preset keys must be unique, like any atom key.

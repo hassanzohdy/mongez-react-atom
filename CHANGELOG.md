@@ -1,5 +1,37 @@
 # Changelog — @mongez/react-atom
 
+## [7.0.0] — 2026-09-30
+
+SSR/CSR correctness fixes. Requires `@mongez/atom` `^7.0.0`.
+
+### Breaking changes
+
+- **Server: hooks throw without an `<AtomStoreProvider>`.** The old singleton fallback (a one-time `console.warn`, silent when `NODE_ENV=production`) is removed. Wrap every server render in a provider. Browsers keep the singleton fallback.
+- **`persistHydration` defaults to `"deferred"`.** Persisted atoms are no longer read at creation; the stored value is applied after mount, so it shows up one commit later. Pass `persistHydration: "immediate"` to keep the old behavior in client-only apps.
+- **Provider store destruction is deferred by one tick.** An auto-created store is destroyed a tick after unmount, and not at all if the provider remounts first. Code that relied on the store being empty immediately after unmount must wait a tick.
+- **Requires `@mongez/atom` `^7.0.0`** (the dependency range moved from `^6.0.0`).
+
+### Changed (behavior)
+
+- **Hooks now throw on a server when no `<AtomStoreProvider>` is mounted** (`src/scope.ts`, `src/store.tsx`). If there is no provider and no `document`, `useAtom(template)`, `useAtom(key)` and every atom hook (`useValue`, `useState`, `use`, `useWatch`, `Provider`) throw an error that names the atom key and the fix. The old one-time `console.warn` (silent when `NODE_ENV=production`) is removed. In a browser the singleton fallback is unchanged. Atoms created with `register: false` never throw.
+- **`persist` is read after mount.** `atom()` now defaults to `persistHydration: "deferred"`: storage is not read while the atom is created (import time) and never on the server. The hooks call `atom.hydratePersisted()` in an effect, which applies the stored value with `update()`. The first client render therefore matches the server render; a persisted value appears one commit later. Pass `persistHydration: "immediate"` to keep the old read-at-creation behavior in client-only apps. Scoped store clones were never persisted and still are not.
+- **`<AtomStoreProvider>` destroys its auto-created store a tick after unmount**, and not at all if the provider mounts again first. A synchronous destroy in the effect cleanup left a StrictMode remount holding an emptied store and destroyed clones. A store passed via `store` is still never destroyed.
+
+### Fixed
+
+- **Store clones seeded from the template's current value**, so a stray `template.update()` on the server leaked into later requests. Clones now start from the default value or `initialValues` (see `@mongez/atom`).
+- **Hooks on a scoped clone made a clone of the clone.** `useAtom(t).useValue()` resolved through `store.use(this)` with `this` already scoped. Resolution is now idempotent, so both call shapes read the same atom.
+- **`getServerSnapshot` was the live `getSnapshot`.** It now returns the store's hydrated value, frozen at the first read, so the first client render matches the server HTML even if effects mutate the store while later boundaries still hydrate. Atoms without a store use their default value.
+- **`use(key)` / `watch` never fired for atoms declared with `default: null`** (see `@mongez/atom`).
+- **`template.destroy()` unsubscribed mounted store clones** (see `@mongez/atom`).
+
+### Added
+
+- **`useLocalAtom(options)`** for state that belongs to one component instance: `register: false`, ignores `<AtomStoreProvider>`, works on the server without a provider, key suffixed with `.local.<n>`, destroyed after unmount (StrictMode-safe).
+- **`atom({ register: false })`** and **`atomCollection({ register: false })`**.
+- **`persistHydration`** option on `atom()` (see above).
+- **`"sideEffects": false`** in `package.json`.
+
 ## [6.0.10] — 2026-08-17
 
 ### Security

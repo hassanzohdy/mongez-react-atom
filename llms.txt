@@ -26,7 +26,7 @@ Every export ships from the package root. Built on `useSyncExternalStore`, tear-
 
 1. **Hooks live on the atom**: `myAtom.useValue()`, `myAtom.useState()`, `myAtom.use("name")`, `myAtom.useWatch("name", cb)`. No `useAtom`/`useAtomValue`/`useSetAtom` distinction — one atom, multiple hooks on it.
 2. **`useAtom(template | key)`** is the *store-scoping* hook (the SSR one), not the read-the-value hook.
-3. **SSR**: wrap the root with `<AtomStoreProvider>` so each request gets its own atom clones. Without it, atoms behave as module-level singletons (fine for client-only SPAs).
+3. **SSR**: wrap the root with `<AtomStoreProvider>` so each request gets its own atom clones. Without it, atoms behave as module-level singletons in a browser (fine for client-only SPAs); on a server the hooks throw. Per-component state: `useLocalAtom()` or `atom({ register: false })`.
 4. **React 18+ only**: `useSyncExternalStore` is required.
 5. **Preset atoms collapse boilerplate** — use them before reaching for custom action atoms.
 

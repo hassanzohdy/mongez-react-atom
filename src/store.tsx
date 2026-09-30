@@ -5,16 +5,15 @@ import {
   type Atom,
   createAtomStore,
 } from "@mongez/atom";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
+import {
+  AtomStoreContext,
+  resolveAtom,
+  resolveAtomByKey,
+  useDeferredDestroy,
+} from "./scope";
 
-/**
- * React context that holds the active atom store. Components that read or
- * write atoms via the React hooks resolve the store-scoped clone from this
- * context. When the context is null (no provider mounted), hooks fall back
- * to the module-level singleton atom, which is the right behavior for a
- * client-only SPA.
- */
-export const AtomStoreContext = createContext<AtomStore | null>(null);
+export { AtomStoreContext };
 
 export type AtomStoreProviderProps = {
   /**
@@ -53,8 +52,14 @@ export type AtomStoreProviderProps = {
  * each request creates its own store, so concurrent requests cannot see
  * each other's state.
  *
- * Without a provider, atoms fall back to the module-level singleton (the
- * historical client-only behavior).
+ * Without a provider, atoms fall back to the module-level singleton in a
+ * browser (the historical client-only behavior). On a server (no
+ * `document`) that fallback throws, because the singleton is shared by
+ * every concurrent request.
+ *
+ * Auto-created stores are destroyed a tick after unmount, and not at all if
+ * the provider mounts again in between (React StrictMode), so a simulated
+ * remount keeps its hydrated values.
  */
 export function AtomStoreProvider({
   store,
@@ -78,15 +83,9 @@ export function AtomStoreProvider({
     return next;
   });
 
-  useEffect(() => {
-    return () => {
-      // Only auto-destroy stores that the provider itself created. Stores
-      // passed in via props are owned by the caller.
-      if (!store) {
-        activeStore.destroy();
-      }
-    };
-  }, [activeStore, store]);
+  // Only auto-destroy stores that the provider itself created. Stores
+  // passed in via props are owned by the caller.
+  useDeferredDestroy(() => activeStore.destroy(), !store);
 
   return (
     <AtomStoreContext.Provider value={activeStore}>
@@ -109,15 +108,19 @@ export function useAtomStore(): AtomStore | null {
  * Two call shapes:
  *
  * - `useAtom(template)` — pass an atom you imported. Returns the
- *   store-scoped clone if a `<AtomStoreProvider>` is mounted above; falls
- *   back to the template itself otherwise. Use this when you need to call
- *   action methods (`startLoading()`, `open()`, etc.) from event handlers
- *   in an SSR-safe way.
+ *   store-scoped clone if a `<AtomStoreProvider>` is mounted above; passing
+ *   an atom that is already a scoped clone returns that same clone. Without
+ *   a provider it returns the template itself in a browser and THROWS on a
+ *   server. Use this when you need to call action methods
+ *   (`startLoading()`, `open()`, etc.) from event handlers in an SSR-safe
+ *   way. Atoms created with `register: false` (local atoms) are returned
+ *   unchanged in every case.
  *
  * - `useAtom(key)` — pass a string key. Returns the scoped atom registered
  *   under that key in the active store, or `undefined` when no provider is
- *   mounted or the key has not entered the store. This is a legacy escape
- *   hatch; prefer the template form.
+ *   mounted (in a browser) or the key has not entered the store. On a
+ *   server without a provider it throws. This is a legacy escape hatch;
+ *   prefer the template form.
  */
 export function useAtom<V, A extends Record<string, any> = {}>(
   template: Atom<V, A>
@@ -126,39 +129,9 @@ export function useAtom<V = any>(key: string): Atom<V> | undefined;
 export function useAtom(arg: Atom<any> | string): Atom<any> | undefined {
   const store = useContext(AtomStoreContext);
 
-  if (!store) {
-    warnIfServerSideSingletonFallback();
-  }
-
   if (typeof arg === "string") {
-    return store?.get(arg);
+    return resolveAtomByKey(store, arg);
   }
-  return store ? store.use(arg) : arg;
-}
 
-/**
- * The singleton fallback (no `<AtomStoreProvider>` mounted) is only safe in
- * a browser: one process, one user. On a Node/SSR server it means every
- * concurrent request reads and writes the same shared atom object — a
- * cross-request state leak. There's no way to *prevent* the fallback here
- * without breaking the documented client-only usage, so instead we warn
- * loudly, once per process, whenever it's hit outside a browser.
- */
-let hasWarnedAboutServerSideSingletonFallback = false;
-
-function warnIfServerSideSingletonFallback(): void {
-  if (typeof document !== "undefined") return;
-  if (hasWarnedAboutServerSideSingletonFallback) return;
-  if (process.env.NODE_ENV === "production") return;
-
-  hasWarnedAboutServerSideSingletonFallback = true;
-
-  // eslint-disable-next-line no-console
-  console.warn(
-    "[@mongez/react-atom] An atom hook ran without a mounted <AtomStoreProvider> " +
-      "while rendering outside a browser (no `document`). It fell back to the " +
-      "module-level singleton atom, which is shared by every concurrent request " +
-      "on this server — one request's state can leak into another's. Wrap your " +
-      "SSR render tree in <AtomStoreProvider> to give each request its own store."
-  );
+  return resolveAtom(store, arg);
 }

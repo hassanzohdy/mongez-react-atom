@@ -49,7 +49,7 @@ function Counter() {
 | **Hydration helpers** | `<HydrateAtomsScript>`, `readHydration()`, and `serializeStore` ship a server-to-client transport with `</script>` and U+2028/U+2029 escaped. |
 | **TypeScript-first** | Atom value and action types flow into every hook; `use("name")` is typed to the keys of the atom's value. |
 | **Backward-compatible** | Legacy `<AtomProvider>` and `AtomContext` survive as deprecated shims while you migrate. |
-| **Zero registry coupling** | Module-level singleton mode is the default — providers are opt-in for SSR and isolation. |
+| **Zero registry coupling** | Module-level singleton mode is the default in a browser. On a server a provider is required (hooks throw without one); `useLocalAtom` and `register: false` keep per-instance atoms out of the registry. |
 
 ---
 
@@ -297,7 +297,33 @@ import { AtomStoreProvider } from "@mongez/react-atom";
 </AtomStoreProvider>
 ```
 
-Without a provider, atoms fall back to the module-level singleton — the correct default for client-only SPAs.
+Without a provider, atoms fall back to the module-level singleton in a browser — the correct default for client-only SPAs. **On a server (no `document`) the same hook throws** an error naming the atom key, because the singleton is shared by every concurrent request.
+
+### Server rules
+
+- **No provider on a server throws.** A hook that runs with no `<AtomStoreProvider>` above it and no `document` (Node, edge, workers) throws an error naming the atom key and the fix. Falling back to the module-level atom there would hand every concurrent request the same object, so one request's state could leak into another's. In a browser the singleton fallback is unchanged. The old one-time `console.warn` (which was silent in production) is gone.
+- **Stores seed from the default.** A store never copies a template's current value, so a stray `template.update()` on the server cannot leak into a request. Values come from `initialValues` or the atom's `default`.
+- **Hooks stay in the store.** Every hook on an atom that is already a scoped clone keeps using that clone: `useAtom(template).useValue()` and `template.useValue()` read the same atom, and a clone from another store resolves to this store's clone.
+- **`getServerSnapshot` is the hydrated value.** During hydration the hooks read the store's initial (hydrated) value, frozen at the first read, instead of the live value, so the first client render matches the server HTML even if effects change the store while later parts of the tree still hydrate. Atoms with no store (client-only singleton, local atoms) use their default value.
+- **StrictMode is safe.** The provider destroys an auto-created store a tick after unmount and cancels that if the provider mounts again first, so StrictMode's simulated remount keeps the hydrated store. A store passed via `store` is never destroyed.
+- **Persist is read after mount.** `atom({ persist: true })` no longer reads storage while the atom is created. It reads it in an effect after mount (`persistHydration: "deferred"`, the default here), so the first client render matches the server and the stored value then applies with a normal update. Pass `persistHydration: "immediate"` for client-only apps that want the value at creation. Scoped store clones are not persisted.
+- **Null-default atoms work with `use(key)`.** Key watchers fire whenever the old or new value is an object, not only when the default was.
+
+### Local atoms — `useLocalAtom()` and `register: false`
+
+State that belongs to one component instance should not live in the global registry:
+
+```tsx
+import { useLocalAtom } from "@mongez/react-atom";
+
+function CheckoutForm() {
+  const form = useLocalAtom({ key: "checkout-form", default: { name: "" } });
+  const name = form.use("name");
+  // ...
+}
+```
+
+`useLocalAtom` creates the atom once per component instance with `register: false`, ignores `<AtomStoreProvider>` (so it works on the server with no provider), and destroys it a tick after unmount. Its key is suffixed with `.local.<n>` so instances never share events; the key you pass is only a label. `atom({ ..., register: false })` and `atomCollection({ ..., register: false })` give the same registry-free atom outside a hook, in which case you must give each instance a unique key.
 
 ### Props
 
@@ -336,7 +362,7 @@ Two providers in the same tree are fully independent — useful for multi-tenant
 ### `useAtom(template | key)` and `useAtomStore()`
 
 ```ts
-useAtom<V, A>(template: Atom<V, A>): Atom<V, A>;     // → store-scoped clone (or template if no provider)
+useAtom<V, A>(template: Atom<V, A>): Atom<V, A>;     // → store-scoped clone (template in a browser with no provider; THROWS on a server with no provider)
 useAtom<V>(key: string): Atom<V> | undefined;        // → scoped atom by key, or undefined
 useAtomStore(): AtomStore | null;                    // → the active store
 ```

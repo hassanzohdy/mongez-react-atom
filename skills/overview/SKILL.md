@@ -79,7 +79,7 @@ userAtom.useWatch("name", cb); // effect-style subscription
 <userAtom.Provider value={...} />  // pushes a value into the atom on mount
 ```
 
-All four honour the nearest `<AtomStoreProvider>`. When no provider is mounted, they operate on the module-level singleton — the correct default for client-only apps.
+All four honour the nearest `<AtomStoreProvider>`. When no provider is mounted they operate on the module-level singleton in a browser — the correct default for client-only apps — and throw on a server, where that singleton would be shared by every request. For per-instance state use `useLocalAtom()` or `atom({ register: false })`.
 
 ## Scope boundaries
 
