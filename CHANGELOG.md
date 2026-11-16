@@ -1,5 +1,11 @@
 # Changelog — @mongez/react-atom
 
+## [7.0.1] — 2026-11-16
+
+### Changed
+
+- Released with `@mongez/atom` 7.0.1 (same family version): the atom registry is a null-prototype object. No changes in this package.
+
 ## [7.0.0] — 2026-09-30
 
 SSR/CSR correctness fixes. Requires `@mongez/atom` `^7.0.0`.
